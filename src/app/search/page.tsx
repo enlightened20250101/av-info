@@ -204,6 +204,34 @@ export default async function SearchPage({
               </Link>
             ))}
           </div>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {[10, 20, 30, 50].map((size) => (
+              <Link
+                key={`per-${size}`}
+                href={`/search?q=${encodeURIComponent(sp.q ?? "")}&type=${encodeURIComponent(mode)}&order=${encodeURIComponent(order)}&perPage=${size}&limit=${encodeURIComponent(String(limit))}`}
+                className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                  perPage === size
+                    ? "bg-accent text-white"
+                    : "border border-border bg-white text-muted hover:border-accent/40"
+                }`}
+              >
+                {size}件/ページ
+              </Link>
+            ))}
+            {[100, 200, 500, 1000].map((size) => (
+              <Link
+                key={`limit-${size}`}
+                href={`/search?q=${encodeURIComponent(sp.q ?? "")}&type=${encodeURIComponent(mode)}&order=${encodeURIComponent(order)}&perPage=${encodeURIComponent(String(perPage))}&limit=${size}`}
+                className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                  limit === size
+                    ? "bg-foreground text-white"
+                    : "border border-border bg-white text-muted hover:border-accent/40"
+                }`}
+              >
+                対象{size}
+              </Link>
+            ))}
+          </div>
         </header>
 
         <SearchHistoryClient query={sp.q ?? ""} />
