@@ -185,6 +185,24 @@ export default async function TopicPage({ params }: { params: Promise<{ slug: st
             </div>
           </section>
         ) : null}
+
+        <section className="rounded-3xl border border-border bg-card p-6">
+          <h2 className="text-lg font-semibold">もっと見る</h2>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            <Link
+              href="/works"
+              className="rounded-2xl border border-border bg-white p-4 text-sm font-semibold text-foreground transition hover:-translate-y-1 hover:border-accent/40"
+            >
+              作品一覧へ
+            </Link>
+            <Link
+              href="/tags"
+              className="rounded-2xl border border-border bg-white p-4 text-sm font-semibold text-foreground transition hover:-translate-y-1 hover:border-accent/40"
+            >
+              タグ一覧へ
+            </Link>
+          </div>
+        </section>
       </div>
     </div>
   );

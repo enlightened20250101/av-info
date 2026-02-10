@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Metadata } from "next";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import { extractMetaTagsFromBody, extractTags, tagKeywords, tagLabel } from "@/lib/tagging";
-import { findWorksByActressSlug, getArticleBySlug } from "@/lib/db";
+import { findWorksByActressSlug, getArticleBySlug, getLatestByType } from "@/lib/db";
 import { SITE } from "@/lib/site";
 
 export const dynamic = "force-dynamic";
@@ -87,12 +87,17 @@ export default async function WorkPage({ params }: { params: Promise<{ code: str
 
   const leadActress = article.related_actresses[0];
   const related = leadActress ? await findWorksByActressSlug(leadActress, 6) : [];
-  const tags = [
-    ...extractTags(`${article.title} ${article.summary}`),
-    ...extractMetaTagsFromBody(article.body),
-  ];
-  const keywordPool = tags.flatMap(tagKeywords);
+  const baseTags = extractTags(`${article.title} ${article.summary}`);
   const metaTags = extractMetaTagsFromBody(article.body);
+  const tags = [...baseTags, ...metaTags];
+  const keywordPool = tags.flatMap(tagKeywords);
+  const latestTopics = await getLatestByType("topic", 40);
+  const relatedTopics = latestTopics
+    .filter((topic) => {
+      const topicTags = extractTags(`${topic.title} ${topic.summary}`);
+      return topicTags.some((tag) => baseTags.includes(tag));
+    })
+    .slice(0, 4);
   const structuredData = {
     "@context": "https://schema.org",
     "@type": "Article",
@@ -221,6 +226,30 @@ export default async function WorkPage({ params }: { params: Promise<{ code: str
                 >
                   <p className="text-xs text-muted">{work.slug}</p>
                   <p className="mt-1 text-sm font-semibold">{work.title}</p>
+                </Link>
+              ))}
+            </div>
+          </section>
+        ) : null}
+
+        {relatedTopics.length > 0 ? (
+          <section className="rounded-3xl border border-border bg-card p-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold">関連トピック</h2>
+              <Link href="/topics" className="text-xs font-semibold text-accent">
+                トピック一覧へ →
+              </Link>
+            </div>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              {relatedTopics.map((topic) => (
+                <Link
+                  key={topic.id}
+                  href={`/topics/${topic.slug}`}
+                  className="rounded-2xl border border-border bg-white p-4 transition hover:-translate-y-1 hover:border-accent/40"
+                >
+                  <p className="text-xs text-muted">{topic.slug}</p>
+                  <p className="mt-1 text-sm font-semibold">{topic.title}</p>
+                  <p className="mt-1 text-xs text-muted line-clamp-2">{topic.summary}</p>
                 </Link>
               ))}
             </div>
