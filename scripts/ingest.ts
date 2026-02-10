@@ -135,8 +135,11 @@ function normalizeSheetRow(record: Record<string, string>) {
   const slug = record.slug?.trim();
   if (!slug) return null;
   const title = record.title?.trim() ?? "";
-  const sourceUrl = record.source_url?.trim();
-  if (!sourceUrl) return null;
+  const affiliateUrl = record.affiliate_url?.trim() || null;
+  const embedHtml = record.embed_html?.trim() || null;
+  if (!affiliateUrl && !embedHtml) return null;
+  const sourceUrl =
+    record.source_url?.trim() || affiliateUrl || `mgs://${slug}`;
 
   const publishedAt = parsePublishedAt(record.published_at);
   const relatedActresses = parseList(record.related_actresses).map((value) => slugify(value));
@@ -151,8 +154,8 @@ function normalizeSheetRow(record: Record<string, string>) {
     body: record.body?.trim() || title,
     images,
     source_url: sourceUrl,
-    affiliate_url: record.affiliate_url?.trim() || null,
-    embed_html: record.embed_html?.trim() || null,
+    affiliate_url: affiliateUrl,
+    embed_html: embedHtml,
     related_works: [],
     related_actresses: relatedActresses,
     published_at: publishedAt.toISOString(),

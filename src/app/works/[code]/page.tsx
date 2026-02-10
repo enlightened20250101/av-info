@@ -87,7 +87,11 @@ export default async function WorkPage({ params }: { params: Promise<{ code: str
   }
 
   const leadActress = article.related_actresses[0];
-  const related = leadActress ? await findWorksByActressSlug(leadActress, 6) : [];
+  const related = leadActress
+    ? (await findWorksByActressSlug(leadActress, 8)).filter(
+        (work) => work.slug !== article.slug
+      )
+    : [];
   const baseTags = extractTags(`${article.title} ${article.summary}`);
   const metaTags = extractMetaTagsFromBody(article.body);
   const tags = [...baseTags, ...metaTags];
@@ -125,7 +129,7 @@ export default async function WorkPage({ params }: { params: Promise<{ code: str
         // eslint-disable-next-line react/no-danger
         dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
       />
-      <div className="mx-auto flex max-w-5xl flex-col gap-8">
+      <div className="mx-auto flex max-w-5xl flex-col gap-6">
         <Breadcrumbs
           items={[
             { label: "Home", href: "/" },
@@ -133,9 +137,19 @@ export default async function WorkPage({ params }: { params: Promise<{ code: str
             { label: article.slug, href: `/works/${article.slug}` },
           ]}
         />
-        <header className="rounded-3xl border border-border bg-card p-6">
+        <header className="rounded-2xl border border-border bg-card px-4 py-4 sm:px-6">
           <p className="text-xs text-muted">{article.slug}</p>
-          <h1 className="mt-2 text-3xl font-semibold">{article.title}</h1>
+          <h1
+            className="mt-2 text-2xl font-semibold sm:text-3xl"
+            style={{
+              display: "-webkit-box",
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: "vertical",
+              overflow: "hidden",
+            }}
+          >
+            {article.title}
+          </h1>
           <p className="mt-2 text-sm text-muted">{formatDate(article.published_at)}</p>
         </header>
         {article.embed_html ? <AffiliateEmbed embedHtml={article.embed_html} /> : null}

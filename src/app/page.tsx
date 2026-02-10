@@ -208,9 +208,9 @@ export default async function Home({
             </div>
           ) : null}
         </div>
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           {heroWorks.length === 0 ? (
-            <div className="col-span-3 flex min-h-[320px] items-center justify-center rounded-[32px] border border-border bg-card text-sm text-muted">
+            <div className="col-span-3 flex min-h-[220px] items-center justify-center rounded-[28px] border border-border bg-card text-sm text-muted">
               No Images
             </div>
           ) : (
@@ -218,21 +218,23 @@ export default async function Home({
               <Link
                 key={work.id}
                 href={`/works/${work.slug}`}
-                className={`group relative overflow-hidden rounded-[28px] border border-border bg-white shadow-[0_20px_50px_-35px_rgba(0,0,0,0.45)] luxe-fade ${
-                  index === 0 ? "col-span-2 row-span-2 min-h-[240px]" : "min-h-[140px]"
+                className={`group relative overflow-hidden rounded-[24px] border border-border bg-white shadow-[0_20px_50px_-35px_rgba(0,0,0,0.45)] luxe-fade ${
+                  index === 0 ? "sm:col-span-2" : ""
                 } ${index === 1 ? "luxe-delay-1" : index === 2 ? "luxe-delay-2" : index === 3 ? "luxe-delay-3" : index === 4 ? "luxe-delay-4" : index === 5 ? "luxe-delay-5" : ""}`}
               >
-                <img
-                  src={work.images[0]?.url ?? ""}
-                  alt={work.images[0]?.alt ?? work.title}
-                  className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/0 to-transparent opacity-90" />
-                <div className="absolute bottom-3 left-3 right-3">
-                  <p className="text-[10px] uppercase tracking-[0.25em] text-white/70">NEW</p>
-                  <p className="mt-1 text-sm font-semibold text-white line-clamp-2">
-                    {work.title}
-                  </p>
+                <div className="relative aspect-[16/9] w-full">
+                  <img
+                    src={work.images[0]?.url ?? ""}
+                    alt={work.images[0]?.alt ?? work.title}
+                    className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/0 to-transparent opacity-90" />
+                  <div className="absolute bottom-3 left-3 right-3">
+                    <p className="text-[10px] uppercase tracking-[0.25em] text-white/70">NEW</p>
+                    <p className="mt-1 text-sm font-semibold text-white line-clamp-2">
+                      {work.title}
+                    </p>
+                  </div>
                 </div>
               </Link>
             ))
@@ -265,21 +267,21 @@ export default async function Home({
       ) : null}
 
       {popularTags.length > 0 ? (
-        <section className="mx-auto mt-8 w-full max-w-6xl rounded-[32px] border border-border bg-card p-6">
+        <section className="mx-auto mt-8 w-full max-w-6xl rounded-[28px] border border-border bg-card px-4 py-4 sm:px-6">
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-muted">
+            <h2 className="text-xs font-semibold uppercase tracking-[0.25em] text-muted">
               Trending Tags
             </h2>
             <Link href="/tags" className="text-xs font-semibold text-accent">
               もっと見る →
             </Link>
           </div>
-          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            {popularTags.slice(0, 8).map((tag) => (
+          <div className="mt-3 flex flex-wrap gap-2">
+            {popularTags.slice(0, 10).map((tag) => (
               <Link
                 key={tag}
                 href={`/tags/${tag}`}
-                className="rounded-2xl border border-border bg-white p-4 text-sm font-semibold text-foreground transition hover:-translate-y-1 hover:border-accent/40"
+                className="rounded-full border border-border bg-white px-3 py-1 text-[11px] font-semibold text-muted hover:border-accent/40"
               >
                 #{tagLabel(tag)}
               </Link>
@@ -349,23 +351,27 @@ export default async function Home({
               href={`/works/${work.slug}`}
               className="group relative overflow-hidden rounded-3xl border border-border bg-white"
             >
-              {work.images[0]?.url ? (
-                <img
-                  src={work.images[0].url}
-                  alt={work.images[0].alt}
-                  className="h-44 w-full object-cover transition duration-500 group-hover:scale-[1.04]"
-                />
-              ) : (
-                <div className="flex h-44 items-center justify-center bg-accent-soft text-xs text-accent">
-                  No Image
+              <div className="relative aspect-[16/9] w-full">
+                {work.images[0]?.url ? (
+                  <img
+                    src={work.images[0].url}
+                    alt={work.images[0].alt}
+                    className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-[1.04]"
+                  />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center bg-accent-soft text-xs text-accent">
+                    No Image
+                  </div>
+                )}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent opacity-90" />
+                <div className="absolute bottom-3 left-3 right-3">
+                  <p className="text-[10px] uppercase tracking-[0.2em] text-white/70">
+                    {work.slug}
+                  </p>
+                  <p className="mt-1 text-sm font-semibold text-white line-clamp-2">
+                    {work.title}
+                  </p>
                 </div>
-              )}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent opacity-90" />
-              <div className="absolute bottom-3 left-3 right-3">
-                <p className="text-[10px] uppercase tracking-[0.2em] text-white/70">{work.slug}</p>
-                <p className="mt-1 text-sm font-semibold text-white line-clamp-2">
-                  {work.title}
-                </p>
               </div>
             </Link>
           ))}

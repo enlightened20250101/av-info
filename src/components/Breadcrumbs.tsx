@@ -24,12 +24,12 @@ export default function Breadcrumbs({ items }: Props) {
 
   return (
     <>
-      <nav aria-label="Breadcrumb" className="text-xs text-muted">
-        <ol className="flex flex-wrap items-center gap-2">
+      <nav aria-label="Breadcrumb" className="text-xs text-muted leading-none">
+        <ol className="flex flex-wrap items-center gap-1">
           {items.map((item, index) => {
             const isLast = index === items.length - 1;
             return (
-              <li key={`${item.label}-${index}`} className="flex items-center gap-2">
+              <li key={`${item.label}-${index}`} className="flex items-center gap-1">
                 {item.href && !isLast ? (
                   <Link href={item.href} className="hover:text-accent">
                     {item.label}

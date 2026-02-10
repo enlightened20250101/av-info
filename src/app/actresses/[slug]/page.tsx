@@ -12,12 +12,13 @@ export async function generateMetadata({
 }: {
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
-  const { slug } = await params;
+  const { slug: rawSlug } = await params;
+  const slug = decodeURIComponent(rawSlug);
   return {
     title: `${slug} | 女優ページ | ${SITE.name}`,
     description: `${slug}の関連作品一覧。`,
     alternates: {
-      canonical: `${SITE.url.replace(/\/$/, "")}/actresses/${slug}`,
+      canonical: `${SITE.url.replace(/\/$/, "")}/actresses/${encodeURIComponent(slug)}`,
     },
     openGraph: {
       title: `${slug} | 女優ページ | ${SITE.name}`,
@@ -28,7 +29,8 @@ export async function generateMetadata({
 }
 
 export default async function ActressPage({ params }: { params: Promise<{ slug: string }> }) {
-  const { slug } = await params;
+  const { slug: rawSlug } = await params;
+  const slug = decodeURIComponent(rawSlug);
   const works = await findWorksByActressSlug(slug, 20);
   const latestWorks = await getLatestByType("work", 120);
   const relatedTags = Array.from(
@@ -44,12 +46,12 @@ export default async function ActressPage({ params }: { params: Promise<{ slug: 
 
   return (
     <div className="min-h-screen px-6 pb-16 pt-12 sm:px-10">
-      <div className="mx-auto flex max-w-4xl flex-col gap-6">
+      <div className="mx-auto flex max-w-4xl flex-col gap-5">
         <Breadcrumbs
           items={[
             { label: "Home", href: "/" },
             { label: "Actresses", href: "/actresses" },
-            { label: slug, href: `/actresses/${slug}` },
+            { label: slug, href: `/actresses/${encodeURIComponent(slug)}` },
           ]}
         />
         <header className="rounded-3xl border border-border bg-card p-6">
