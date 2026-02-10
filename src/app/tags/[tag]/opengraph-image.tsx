@@ -36,8 +36,9 @@ function brandBadge() {
   );
 }
 
-export default function OpenGraphImage({ params }: { params: { tag: string } }) {
-  const normalizedTag = normalizeTag(params.tag) || params.tag || "タグ";
+export default async function OpenGraphImage({ params }: { params: Promise<{ tag: string }> }) {
+  const { tag } = await params;
+  const normalizedTag = normalizeTag(tag) || tag || "タグ";
   const label = tagLabel(normalizedTag) || normalizedTag;
   const title = `#${label}`;
 

@@ -12,10 +12,11 @@ export const dynamic = "force-dynamic";
 export async function generateMetadata({
   params,
 }: {
-  params: { tag: string };
+  params: Promise<{ tag: string }>;
 }): Promise<Metadata> {
-  const normalizedTag = normalizeTag(params.tag) || params.tag || "タグ";
-  const label = tagLabel(normalizedTag) || normalizedTag;
+  const { tag } = await params;
+  const normalizedTag = normalizeTag(tag) || tag || "タグ";
+  const label = tagLabel(normalizedTag);
   return {
     title: `#${label} | タグ | ${SITE.name}`,
     description: `タグ「${label}」に関連する記事一覧。`,
@@ -59,12 +60,13 @@ function buildTagTrendFromArticles(tag: string, articles: Article[]) {
   return buildTrend(points);
 }
 
-export default async function TagPage({ params }: { params: { tag: string } }) {
+export default async function TagPage({ params }: { params: Promise<{ tag: string }> }) {
+  const { tag } = await params;
   const articles = await getLatestArticles(200);
   const works = await getLatestByType("work", 60);
   const topics = await getLatestByType("topic", 60);
-  const normalizedTag = normalizeTag(params.tag) || params.tag || "タグ";
-  const keyword = tagLabel(normalizedTag) || normalizedTag;
+  const normalizedTag = normalizeTag(tag) || tag || "タグ";
+  const keyword = tagLabel(normalizedTag);
   const trend = buildTagTrendFromArticles(normalizedTag, articles);
   const base = SITE.url.replace(/\/$/, "");
   const structuredData = {
