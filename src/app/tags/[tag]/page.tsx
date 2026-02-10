@@ -63,6 +63,14 @@ export default async function TagPage({ params }: { params: { tag: string } }) {
   const topics = await getLatestByType("topic", 60);
   const keyword = tagLabel(params.tag);
   const trend = buildTagTrendFromArticles(params.tag, articles);
+  const base = SITE.url.replace(/\/$/, "");
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    name: `#${keyword}`,
+    url: `${base}/tags/${params.tag}`,
+    description: `タグ「${keyword}」に関連する記事一覧。`,
+  };
 
   const matched = articles.filter((article) => {
     const text = `${article.title} ${article.summary}`;
@@ -95,6 +103,11 @@ export default async function TagPage({ params }: { params: { tag: string } }) {
 
   return (
     <div className="min-h-screen px-6 pb-16 pt-12 sm:px-10">
+      <script
+        type="application/ld+json"
+        // eslint-disable-next-line react/no-danger
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+      />
       <div className="mx-auto flex max-w-4xl flex-col gap-6">
         <Breadcrumbs
           items={[

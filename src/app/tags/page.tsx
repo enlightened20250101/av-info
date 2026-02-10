@@ -56,9 +56,23 @@ export default async function TagsPage({
   const baseParams = new URLSearchParams();
   if (sp.q) baseParams.set("q", sp.q);
 
+  const base = SITE.url.replace(/\/$/, "");
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    name: "タグ一覧",
+    url: `${base}/tags`,
+    description: "サイト内で利用しているタグ一覧。",
+  };
+
 
   return (
     <div className="min-h-screen px-6 pb-16 pt-12 sm:px-10">
+      <script
+        type="application/ld+json"
+        // eslint-disable-next-line react/no-danger
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+      />
       <div className="mx-auto flex max-w-5xl flex-col gap-6">
         <Breadcrumbs
           items={[
