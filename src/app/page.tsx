@@ -4,15 +4,16 @@ import { extractMetaTagsFromBody, extractTags, tagLabel } from "@/lib/tagging";
 import { getLatestArticles, getLatestByType } from "@/lib/db";
 import { buildPagination } from "@/lib/pagination";
 import { Article } from "@/lib/schema";
+import { SITE } from "@/lib/site";
 
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "AV Info Lab | 自動更新AV情報",
-  description: "FANZA作品を含む最新AV情報を毎日自動更新。新着、ランキング変動、トピックを集約。",
+  title: `${SITE.name} | 自動更新AV情報`,
+  description: SITE.description,
   openGraph: {
-    title: "AV Info Lab | 自動更新AV情報",
-    description: "FANZA作品を含む最新AV情報を毎日自動更新。新着、ランキング変動、トピックを集約。",
+    title: `${SITE.name} | 自動更新AV情報`,
+    description: SITE.description,
     type: "website",
   },
 };
@@ -101,9 +102,9 @@ export default async function Home({
             </div>
           </div>
           <h1 className="mt-6 text-4xl font-semibold tracking-tight sm:text-5xl">
-            AV Info Lab
+            {SITE.name}
           </h1>
-          <p className="mt-3 text-sm text-muted">最新作品をビジュアル中心でチェック。</p>
+          <p className="mt-3 text-sm text-muted">{SITE.description}</p>
           <div className="mt-6 flex flex-wrap gap-2">
             <Link
               href="/works"

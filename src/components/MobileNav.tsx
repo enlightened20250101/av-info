@@ -43,7 +43,9 @@ export default function MobileNav() {
     <>
       <div className="fixed inset-x-0 top-0 z-40 lg:hidden">
         <div className="mx-auto flex w-full max-w-6xl items-center justify-between border-b border-border bg-white/90 px-4 py-3 backdrop-blur">
-          <span className="text-xs font-semibold tracking-[0.25em] text-muted">ONA INFO</span>
+          <Link href="/" className="text-xs font-semibold tracking-[0.25em] text-muted">
+            ONA INFO
+          </Link>
           <button
             type="button"
             aria-label="メニューを開く"
