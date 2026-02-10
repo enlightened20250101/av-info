@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Metadata } from "next";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import { buildTrend } from "@/lib/analytics";
-import { extractMetaTagsFromBody, extractTags, tagLabel, tagSummary } from "@/lib/tagging";
+import { extractMetaTagsFromBody, extractTags, normalizeTag, tagLabel, tagSummary } from "@/lib/tagging";
 import { getLatestArticles, getLatestByType } from "@/lib/db";
 import { Article } from "@/lib/schema";
 import { SITE } from "@/lib/site";
@@ -14,12 +14,13 @@ export async function generateMetadata({
 }: {
   params: { tag: string };
 }): Promise<Metadata> {
-  const label = tagLabel(params.tag) || params.tag || "タグ";
+  const normalizedTag = normalizeTag(params.tag) || params.tag || "タグ";
+  const label = tagLabel(normalizedTag) || normalizedTag;
   return {
     title: `#${label} | タグ | ${SITE.name}`,
     description: `タグ「${label}」に関連する記事一覧。`,
     alternates: {
-      canonical: `${SITE.url.replace(/\/$/, "")}/tags/${params.tag}`,
+      canonical: `${SITE.url.replace(/\/$/, "")}/tags/${encodeURIComponent(normalizedTag)}`,
     },
     openGraph: {
       title: `#${label} | タグ | ${SITE.name}`,
@@ -62,14 +63,15 @@ export default async function TagPage({ params }: { params: { tag: string } }) {
   const articles = await getLatestArticles(200);
   const works = await getLatestByType("work", 60);
   const topics = await getLatestByType("topic", 60);
-  const keyword = tagLabel(params.tag) || params.tag || "タグ";
-  const trend = buildTagTrendFromArticles(params.tag, articles);
+  const normalizedTag = normalizeTag(params.tag) || params.tag || "タグ";
+  const keyword = tagLabel(normalizedTag) || normalizedTag;
+  const trend = buildTagTrendFromArticles(normalizedTag, articles);
   const base = SITE.url.replace(/\/$/, "");
   const structuredData = {
     "@context": "https://schema.org",
     "@type": "CollectionPage",
     name: `#${keyword}`,
-    url: `${base}/tags/${params.tag}`,
+    url: `${base}/tags/${encodeURIComponent(normalizedTag)}`,
     description: `タグ「${keyword}」に関連する記事一覧。`,
   };
 
@@ -77,8 +79,8 @@ export default async function TagPage({ params }: { params: { tag: string } }) {
     const text = `${article.title} ${article.summary}`;
     const metaTags = article.type === "work" ? extractMetaTagsFromBody(article.body) : [];
     return (
-      extractTags(text).includes(params.tag) ||
-      metaTags.includes(params.tag) ||
+      extractTags(text).includes(normalizedTag) ||
+      metaTags.includes(normalizedTag) ||
       text.includes(keyword)
     );
   });
@@ -87,8 +89,8 @@ export default async function TagPage({ params }: { params: { tag: string } }) {
     const text = `${work.title} ${work.summary}`;
     const metaTags = extractMetaTagsFromBody(work.body);
     return (
-      extractTags(text).includes(params.tag) ||
-      metaTags.includes(params.tag) ||
+      extractTags(text).includes(normalizedTag) ||
+      metaTags.includes(normalizedTag) ||
       text.includes(keyword)
     );
   });
@@ -105,7 +107,7 @@ export default async function TagPage({ params }: { params: { tag: string } }) {
 
   const todayTopics = topics.filter((topic) => {
     const text = `${topic.title} ${topic.summary}`;
-    return extractTags(text).includes(params.tag) || text.includes(keyword);
+    return extractTags(text).includes(normalizedTag) || text.includes(keyword);
   });
 
   const relatedActresses = Array.from(
@@ -124,13 +126,13 @@ export default async function TagPage({ params }: { params: { tag: string } }) {
           items={[
             { label: "Home", href: "/" },
             { label: "Tags", href: "/tags" },
-            { label: `#${tagLabel(params.tag)}`, href: `/tags/${params.tag}` },
+            { label: `#${keyword}`, href: `/tags/${encodeURIComponent(normalizedTag)}` },
           ]}
         />
         <header className="rounded-3xl border border-border bg-card p-6">
           <p className="text-xs text-muted">tag</p>
-          <h1 className="mt-2 text-3xl font-semibold">#{tagLabel(params.tag)}</h1>
-          <p className="mt-2 text-sm text-muted">{tagSummary(params.tag)}</p>
+          <h1 className="mt-2 text-3xl font-semibold">#{keyword}</h1>
+          <p className="mt-2 text-sm text-muted">{tagSummary(normalizedTag)}</p>
           <p className="mt-2 text-xs text-muted">関連記事 {matched.length}件</p>
         </header>
 

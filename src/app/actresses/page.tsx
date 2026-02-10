@@ -88,6 +88,14 @@ export default async function ActressesPage({
               検索
             </button>
           </form>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <Link
+              href="/actresses/ranking"
+              className="rounded-full border border-border bg-white px-4 py-2 text-xs font-semibold text-muted hover:border-accent/40"
+            >
+              女優ランキングへ
+            </Link>
+          </div>
         </header>
 
         <section className="rounded-3xl border border-border bg-white p-6">

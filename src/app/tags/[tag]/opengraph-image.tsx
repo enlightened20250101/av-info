@@ -1,6 +1,6 @@
 import { ImageResponse } from "next/og";
 import { SITE } from "@/lib/site";
-import { tagLabel } from "@/lib/tagging";
+import { normalizeTag, tagLabel } from "@/lib/tagging";
 
 export const runtime = "edge";
 export const size = { width: 1200, height: 630 };
@@ -37,7 +37,8 @@ function brandBadge() {
 }
 
 export default function OpenGraphImage({ params }: { params: { tag: string } }) {
-  const label = tagLabel(params.tag) || params.tag || "タグ";
+  const normalizedTag = normalizeTag(params.tag) || params.tag || "タグ";
+  const label = tagLabel(normalizedTag) || normalizedTag;
   const title = `#${label}`;
 
   return new ImageResponse(

@@ -60,10 +60,29 @@ export function extractMetaTagsFromBody(body: string) {
   return tags;
 }
 
+export function normalizeTag(tag: string) {
+  if (!tag) return "";
+  let value = tag.trim();
+  try {
+    value = decodeURIComponent(value);
+  } catch {
+    // ignore malformed escape sequences
+  }
+  if (value.startsWith("#")) {
+    value = value.slice(1);
+  }
+  return value.trim();
+}
+
 export function tagLabel(tag: string) {
-  if (!tag) return "タグ";
-  if (tag.startsWith("maker:")) return `メーカー:${tag.replace("maker:", "")}`;
-  if (tag.startsWith("genre:")) return `ジャンル:${tag.replace("genre:", "")}`;
+  const normalized = normalizeTag(tag);
+  if (!normalized) return "タグ";
+  if (normalized.startsWith("maker:")) {
+    return `メーカー:${normalized.replace("maker:", "")}`;
+  }
+  if (normalized.startsWith("genre:")) {
+    return `ジャンル:${normalized.replace("genre:", "")}`;
+  }
   const labels: Record<string, string> = {
     newcomer: "新人",
     exclusive: "独占",
@@ -80,19 +99,21 @@ export function tagLabel(tag: string) {
     feature: "特集",
     event: "イベント",
   };
-  return labels[tag] ?? tag;
+  return labels[normalized] ?? normalized;
 }
 
 export function tagSummary(tag: string) {
-  if (!tag) return "関連作品やトピックをまとめたタグです。";
-  return TAG_SUMMARIES[tag] ?? "関連作品やトピックをまとめたタグです。";
+  const normalized = normalizeTag(tag);
+  if (!normalized) return "関連作品やトピックをまとめたタグです。";
+  return TAG_SUMMARIES[normalized] ?? "関連作品やトピックをまとめたタグです。";
 }
 
 export function tagKeywords(tag: string) {
-  if (!tag) return [];
-  if (tag.startsWith("maker:")) return [tag.replace("maker:", "")];
-  if (tag.startsWith("genre:")) return [tag.replace("genre:", "")];
-  return TAG_MAP[tag] ?? [];
+  const normalized = normalizeTag(tag);
+  if (!normalized) return [];
+  if (normalized.startsWith("maker:")) return [normalized.replace("maker:", "")];
+  if (normalized.startsWith("genre:")) return [normalized.replace("genre:", "")];
+  return TAG_MAP[normalized] ?? [];
 }
 
 export function pickRelatedWorks(works: Article[], tags: string[], limit = 6) {

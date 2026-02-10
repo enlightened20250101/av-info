@@ -9,6 +9,7 @@ const NAV_ITEMS = [
   { label: "作品", href: "/works" },
   { label: "トピック", href: "/topics" },
   { label: "女優", href: "/actresses" },
+  { label: "女優ランキング", href: "/actresses/ranking" },
   { label: "タグ", href: "/tags" },
   { label: "検索", href: "/search" },
   { label: "メーカー", href: "/makers" },

@@ -26,6 +26,7 @@ export default async function sitemap({ id }: { id: number }): Promise<MetadataR
     "/contact",
     "/company",
     "/privacy",
+    "/actresses/ranking",
   ];
 
   const articles = await getLatestArticles(MAX_ARTICLES);

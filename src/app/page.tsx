@@ -325,6 +325,11 @@ export default async function Home({
               </Link>
             ))}
           </div>
+          <div className="mt-4 flex justify-end">
+            <Link href="/actresses/ranking" className="text-xs font-semibold text-accent">
+              ランキングを見る →
+            </Link>
+          </div>
         </section>
       ) : null}
 
