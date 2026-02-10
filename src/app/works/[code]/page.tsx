@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Metadata } from "next";
 import Breadcrumbs from "@/components/Breadcrumbs";
+import { AffiliateEmbed } from "@/components/AffiliateEmbed";
 import { extractMetaTagsFromBody, extractTags, tagKeywords, tagLabel } from "@/lib/tagging";
 import { findWorksByActressSlug, getArticleBySlug, getLatestByType } from "@/lib/db";
 import { SITE } from "@/lib/site";
@@ -118,7 +119,7 @@ export default async function WorkPage({ params }: { params: Promise<{ code: str
   };
 
   return (
-    <div className="min-h-screen px-6 pb-16 pt-12 sm:px-10">
+    <div className="min-h-screen px-6 pb-28 pt-12 sm:px-10">
       <script
         type="application/ld+json"
         // eslint-disable-next-line react/no-danger
@@ -137,6 +138,7 @@ export default async function WorkPage({ params }: { params: Promise<{ code: str
           <h1 className="mt-2 text-3xl font-semibold">{article.title}</h1>
           <p className="mt-2 text-sm text-muted">{formatDate(article.published_at)}</p>
         </header>
+        {article.embed_html ? <AffiliateEmbed embedHtml={article.embed_html} /> : null}
 
         <section className="grid gap-6 md:grid-cols-[1.2fr_1fr]">
           <div className="rounded-3xl border border-border bg-white p-6">
@@ -176,7 +178,7 @@ export default async function WorkPage({ params }: { params: Promise<{ code: str
                 ))}
               </div>
             ) : null}
-            {article.affiliate_url ? (
+            {!article.embed_html && article.affiliate_url ? (
               <a
                 href={article.affiliate_url}
                 className="mt-6 inline-flex items-center justify-center rounded-full bg-accent px-4 py-2 text-sm font-semibold text-white"
@@ -186,14 +188,6 @@ export default async function WorkPage({ params }: { params: Promise<{ code: str
                 FANZAで見る
               </a>
             ) : null}
-            <a
-              href={article.source_url}
-              className="mt-3 block text-xs text-muted underline"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Source
-            </a>
           </div>
         </section>
 
@@ -319,6 +313,19 @@ export default async function WorkPage({ params }: { params: Promise<{ code: str
           </div>
         </section>
       </div>
+      {article.affiliate_url ? (
+        <div className="fixed inset-x-0 bottom-4 z-40 px-4">
+          <a
+            href={article.affiliate_url}
+            className="mx-auto flex w-full max-w-3xl items-center justify-center rounded-full bg-accent px-6 py-4 text-base font-semibold text-white shadow-xl transition hover:-translate-y-0.5 hover:shadow-2xl animate-bounce"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ textShadow: "0 1px 2px rgba(0, 0, 0, 0.45)" }}
+          >
+            続きはこちら
+          </a>
+        </div>
+      ) : null}
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import dotenv from "dotenv";
 import fs from "fs";
 import path from "path";
+import { google } from "googleapis";
 import { fetchFanzaWorks } from "@/fetchers/fetch_fanza_works";
 import { fetchDailyTopics } from "@/fetchers/fetch_daily_topics";
 import { fetchRankings } from "@/fetchers/fetch_rankings";
@@ -13,6 +14,9 @@ import { normalizeSummary } from "@/normalizers/normalize_summary";
 import { normalizeRssTopic } from "@/normalizers/normalize_rss_topic";
 import { extractTags, pickRelatedWorks, tagLabel, tagSummary } from "@/lib/tagging";
 import { findWorksByActressSlug, getLatestByType, upsertArticle } from "@/lib/db";
+import { slugify } from "@/lib/text";
+import { Article, ArticleImage } from "@/lib/schema";
+import { v4 as uuidv4 } from "uuid";
 
 dotenv.config({ path: path.join(process.cwd(), ".env.local") });
 
@@ -53,6 +57,109 @@ function appendTagSummary(body: string, tags: string[]) {
   const limited = tags.slice(0, 2);
   const lines = limited.map((tag) => `- #${tagLabel(tag)}: ${tagSummary(tag)}`);
   return `${body}\n\nタグ解説:\n${lines.join("\n")}`;
+}
+
+function readServiceAccount() {
+  const jsonEnv = process.env.GOOGLE_SERVICE_ACCOUNT_JSON;
+  if (jsonEnv) {
+    return JSON.parse(jsonEnv);
+  }
+
+  const fileEnv = process.env.GOOGLE_SERVICE_ACCOUNT_FILE;
+  const filePath = fileEnv
+    ? path.resolve(process.cwd(), fileEnv)
+    : path.join(process.cwd(), "service_account.json");
+  if (fs.existsSync(filePath)) {
+    return JSON.parse(fs.readFileSync(filePath, "utf-8"));
+  }
+
+  return null;
+}
+
+function parseGoogleDateSerial(serial: number) {
+  const ms = Math.round((serial - 25569) * 86400 * 1000);
+  return new Date(ms);
+}
+
+function parsePublishedAt(value: unknown) {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return parseGoogleDateSerial(value);
+  }
+
+  if (typeof value === "string" && value.trim()) {
+    const raw = value.trim();
+    const plainMatch = raw.match(/^(\d{4})[/-](\d{1,2})[/-](\d{1,2})$/);
+    if (plainMatch) {
+      const [_, y, m, d] = plainMatch;
+      return new Date(`${y}-${m.padStart(2, "0")}-${d.padStart(2, "0")}T00:00:00+09:00`);
+    }
+    const parsed = new Date(raw);
+    if (!Number.isNaN(parsed.getTime())) {
+      return parsed;
+    }
+  }
+
+  return new Date();
+}
+
+function parseList(value: unknown) {
+  if (Array.isArray(value)) return value.map(String);
+  if (typeof value !== "string") return [];
+  const raw = value.trim();
+  if (!raw) return [];
+  if (raw.startsWith("[")) {
+    try {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed.map(String);
+    } catch {
+      return [];
+    }
+  }
+  return raw
+    .split(/[,\n]/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function buildImages(record: Record<string, string>, title: string) {
+  const images: ArticleImage[] = [];
+  for (let index = 1; index <= 10; index += 1) {
+    const value = record[`image_${index}`]?.trim();
+    if (!value) continue;
+    images.push({ url: value, alt: title || "image" });
+  }
+  return images;
+}
+
+function normalizeSheetRow(record: Record<string, string>) {
+  const slug = record.slug?.trim();
+  if (!slug) return null;
+  const title = record.title?.trim() ?? "";
+  const sourceUrl = record.source_url?.trim();
+  if (!sourceUrl) return null;
+
+  const publishedAt = parsePublishedAt(record.published_at);
+  const relatedActresses = parseList(record.related_actresses).map((value) => slugify(value));
+  const images = buildImages(record, title);
+
+  const article: Article = {
+    id: uuidv4(),
+    type: (record.type?.trim() as Article["type"]) || "work",
+    slug,
+    title,
+    summary: record.summary?.trim() || `${title} の作品情報。`,
+    body: record.body?.trim() || title,
+    images,
+    source_url: sourceUrl,
+    affiliate_url: record.affiliate_url?.trim() || null,
+    embed_html: record.embed_html?.trim() || null,
+    related_works: [],
+    related_actresses: relatedActresses,
+    published_at: publishedAt.toISOString(),
+    fetched_at: new Date().toISOString(),
+  };
+
+  return article;
 }
 
 async function buildTopicLinks(text: string) {
@@ -209,6 +316,62 @@ async function ingestRssTopics() {
   return { upserted, fetched: total };
 }
 
+async function ingestGsheetEmbeds() {
+  const spreadsheetId = process.env.GSHEETS_SPREADSHEET_ID;
+  if (!spreadsheetId) {
+    logLine("GSheet fetch skipped: missing GSHEETS_SPREADSHEET_ID");
+    return { upserted: 0, skipped: 0, fetched: 0 };
+  }
+
+  const sheetName = process.env.GSHEETS_SHEET_NAME || "embeds";
+  const serviceAccount = readServiceAccount();
+  if (!serviceAccount) {
+    logLine("GSheet fetch skipped: missing service account credentials");
+    return { upserted: 0, skipped: 0, fetched: 0 };
+  }
+
+  const auth = new google.auth.JWT({
+    email: serviceAccount.client_email,
+    key: serviceAccount.private_key,
+    scopes: ["https://www.googleapis.com/auth/spreadsheets.readonly"],
+  });
+
+  const sheets = google.sheets({ version: "v4", auth });
+  const response = await sheets.spreadsheets.values.get({
+    spreadsheetId,
+    range: `${sheetName}!A1:Z`,
+  });
+
+  const rows = response.data.values ?? [];
+  if (rows.length <= 1) {
+    return { upserted: 0, skipped: 0, fetched: 0 };
+  }
+
+  const headers = rows[0].map((header) => String(header).trim());
+  const records = rows.slice(1).map((row) => {
+    const record: Record<string, string> = {};
+    headers.forEach((header, index) => {
+      record[header] = row[index] ? String(row[index]) : "";
+    });
+    return record;
+  });
+
+  let upserted = 0;
+  let skipped = 0;
+  for (const record of records) {
+    const article = normalizeSheetRow(record);
+    if (!article) {
+      skipped += 1;
+      continue;
+    }
+    const result = await upsertArticle(article);
+    logLine(`GSheet ${article.slug}: ${result.status}`);
+    upserted += 1;
+  }
+
+  return { upserted, skipped, fetched: records.length };
+}
+
 async function sendNotification(message: string) {
   const url = process.env.NOTIFY_WEBHOOK_URL;
   if (!url) return;
@@ -229,6 +392,7 @@ async function run() {
   logLine("Ingest started");
 
   const tasks = [
+    { name: "gsheet", run: ingestGsheetEmbeds },
     { name: "summaries", run: ingestSummaries },
     { name: "topics", run: ingestDailyTopics },
     { name: "rankings", run: ingestRankings },

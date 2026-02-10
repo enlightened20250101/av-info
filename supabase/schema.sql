@@ -8,6 +8,7 @@ create table if not exists public.articles (
   images jsonb not null default '[]'::jsonb,
   source_url text not null unique,
   affiliate_url text,
+  embed_html text,
   related_works jsonb not null default '[]'::jsonb,
   related_actresses jsonb not null default '[]'::jsonb,
   published_at timestamptz not null,

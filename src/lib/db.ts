@@ -17,6 +17,7 @@ type Database = {
           images: Json;
           source_url: string;
           affiliate_url: string | null;
+          embed_html: string | null;
           related_works: Json;
           related_actresses: Json;
           published_at: string;
@@ -32,6 +33,7 @@ type Database = {
           images: Json;
           source_url: string;
           affiliate_url?: string | null;
+          embed_html?: string | null;
           related_works: Json;
           related_actresses: Json;
           published_at: string;
@@ -47,6 +49,7 @@ type Database = {
           images?: Json;
           source_url?: string;
           affiliate_url?: string | null;
+          embed_html?: string | null;
           related_works?: Json;
           related_actresses?: Json;
           published_at?: string;
@@ -193,13 +196,15 @@ export async function findWorksByActressSlug(actressSlug: string, limit = 8) {
     .from("articles")
     .select("*")
     .eq("type", "work")
-    .contains("related_actresses", [actressSlug])
     .order("published_at", { ascending: false })
-    .limit(limit);
+    .limit(200);
 
   if (error) {
     throw error;
   }
 
-  return (data ?? []).map((row) => normalizeArticle(row as Article));
+  return (data ?? [])
+    .map((row) => normalizeArticle(row as Article))
+    .filter((row) => row.related_actresses.includes(actressSlug))
+    .slice(0, limit);
 }

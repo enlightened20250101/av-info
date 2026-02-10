@@ -42,6 +42,11 @@ DMM_AFFILIATE_URL_TEMPLATE={url}?aff_id={affiliate_id}
 RSS_FEEDS=
 RSS_MAX_ITEMS_PER_FEED=5
 
+# GSheet (任意)
+GSHEETS_SPREADSHEET_ID=
+GSHEETS_SHEET_NAME=embeds
+GOOGLE_SERVICE_ACCOUNT_FILE=./service_account.json
+
 # APIリトライ/タイムアウト
 FETCH_RETRIES=2
 FETCH_TIMEOUT_MS=8000
@@ -74,6 +79,7 @@ SITE_URL=https://example.com
 - FANZA公式RSSは地域制限があるため、利用可能な環境でRSSのURLを取得して `RSS_FEEDS` に設定してください。
 - DMM/FANZA公式APIのパラメータ名は環境や契約によって異なる場合があります。
   `DMM_SERVICE_PARAM` と `DMM_FLOOR_PARAM` を使ってパラメータ名を切り替え可能です。
+- `service_account.json` を使う場合はリポジトリに含めないでください。
 
 ```
 DMM_SERVICE_PARAM=service
