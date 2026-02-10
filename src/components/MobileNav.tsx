@@ -13,6 +13,8 @@ const NAV_ITEMS = [
   { label: "検索", href: "/search" },
   { label: "メーカー", href: "/makers" },
   { label: "ジャンル", href: "/genres" },
+  { label: "お問い合わせ", href: "/contact" },
+  { label: "会社情報", href: "/company" },
 ];
 
 export default function MobileNav() {
