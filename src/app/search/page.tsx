@@ -185,23 +185,43 @@ export default async function SearchPage({
           ) : null}
 
           {query && sorted.length > 0 ? (
-            <div className="mt-3 grid gap-3">
-              {pageItems.map((article) => (
-                <Link
-                  key={article.id}
-                  href={`/${article.type === "work" ? "works" : article.type === "actress" ? "actresses" : "topics"}/${article.slug}`}
-                  className="rounded-2xl border border-border bg-card p-4 transition hover:-translate-y-1 hover:border-accent/40"
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="rounded-full bg-accent-soft px-3 py-1 text-xs font-semibold text-accent">
-                      {article.type}
-                    </span>
-                    <span className="text-xs text-muted">{highlight(article.slug, query)}</span>
-                  </div>
-                  <p className="mt-2 text-sm font-semibold">{highlight(article.title, query)}</p>
-                  <p className="mt-1 text-xs text-muted">{highlight(article.summary, query)}</p>
-                </Link>
-              ))}
+            <div className="mt-3 grid gap-3 sm:grid-cols-2">
+              {pageItems.map((article) => {
+                const cover = article.type === "work" ? article.images?.[0]?.url : null;
+                return (
+                  <Link
+                    key={article.id}
+                    href={`/${article.type === "work" ? "works" : article.type === "actress" ? "actresses" : "topics"}/${article.slug}`}
+                    className="group overflow-hidden rounded-2xl border border-border bg-card transition hover:-translate-y-1 hover:border-accent/40"
+                  >
+                    <div className="relative h-36 overflow-hidden bg-accent-soft">
+                      {cover ? (
+                        <img
+                          src={cover}
+                          alt={article.title}
+                          className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
+                        />
+                      ) : (
+                        <div className="flex h-full items-center justify-center text-[10px] font-semibold uppercase tracking-[0.25em] text-accent">
+                          {article.type}
+                        </div>
+                      )}
+                    </div>
+                    <div className="p-4">
+                      <div className="flex items-center gap-3">
+                        <span className="rounded-full bg-accent-soft px-3 py-1 text-xs font-semibold text-accent">
+                          {article.type}
+                        </span>
+                        <span className="text-xs text-muted">{highlight(article.slug, query)}</span>
+                      </div>
+                      <p className="mt-2 text-sm font-semibold">{highlight(article.title, query)}</p>
+                      <p className="mt-1 text-xs text-muted line-clamp-2">
+                        {highlight(article.summary, query)}
+                      </p>
+                    </div>
+                  </Link>
+                );
+              })}
             </div>
           ) : null}
           {query && sorted.length > 0 ? (

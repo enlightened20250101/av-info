@@ -84,16 +84,31 @@ export default async function TopicsPage({
           </form>
         </header>
 
-        <section className="grid gap-3">
+        <section className="grid gap-4 sm:grid-cols-2">
           {pageItems.map((topic) => (
             <Link
               key={topic.id}
               href={`/topics/${topic.slug}`}
-              className="rounded-2xl border border-border bg-white p-4 transition hover:-translate-y-1 hover:border-accent/40"
+              className="group overflow-hidden rounded-2xl border border-border bg-white transition hover:-translate-y-1 hover:border-accent/40"
             >
-              <p className="text-xs text-muted">{topic.slug}</p>
-              <p className="mt-1 text-sm font-semibold">{topic.title}</p>
-              <p className="mt-2 text-xs text-muted">{topic.summary}</p>
+              <div className="relative h-36 overflow-hidden bg-accent-soft">
+                {topic.images?.[0]?.url ? (
+                  <img
+                    src={topic.images[0].url}
+                    alt={topic.images[0].alt}
+                    className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
+                  />
+                ) : (
+                  <div className="flex h-full items-center justify-center text-[10px] font-semibold uppercase tracking-[0.25em] text-accent">
+                    Topic
+                  </div>
+                )}
+              </div>
+              <div className="p-4">
+                <p className="text-xs text-muted">{topic.slug}</p>
+                <p className="mt-1 text-sm font-semibold">{topic.title}</p>
+                <p className="mt-2 text-xs text-muted line-clamp-2">{topic.summary}</p>
+              </div>
             </Link>
           ))}
         </section>
