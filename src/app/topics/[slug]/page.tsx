@@ -201,6 +201,18 @@ export default async function TopicPage({ params }: { params: Promise<{ slug: st
             >
               タグ一覧へ
             </Link>
+            <Link
+              href="/genres"
+              className="rounded-2xl border border-border bg-white p-4 text-sm font-semibold text-foreground transition hover:-translate-y-1 hover:border-accent/40"
+            >
+              ジャンル一覧へ
+            </Link>
+            <Link
+              href="/makers"
+              className="rounded-2xl border border-border bg-white p-4 text-sm font-semibold text-foreground transition hover:-translate-y-1 hover:border-accent/40"
+            >
+              メーカー一覧へ
+            </Link>
           </div>
         </section>
       </div>

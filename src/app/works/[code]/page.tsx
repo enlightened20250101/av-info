@@ -255,6 +255,36 @@ export default async function WorkPage({ params }: { params: Promise<{ code: str
             </div>
           </section>
         ) : null}
+
+        <section className="rounded-3xl border border-border bg-card p-6">
+          <h2 className="text-lg font-semibold">関連リンク</h2>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <Link
+              href="/topics"
+              className="rounded-2xl border border-border bg-white p-4 text-sm font-semibold text-foreground transition hover:-translate-y-1 hover:border-accent/40"
+            >
+              トピック一覧
+            </Link>
+            <Link
+              href="/tags"
+              className="rounded-2xl border border-border bg-white p-4 text-sm font-semibold text-foreground transition hover:-translate-y-1 hover:border-accent/40"
+            >
+              タグ一覧
+            </Link>
+            <Link
+              href="/genres"
+              className="rounded-2xl border border-border bg-white p-4 text-sm font-semibold text-foreground transition hover:-translate-y-1 hover:border-accent/40"
+            >
+              ジャンル一覧
+            </Link>
+            <Link
+              href="/makers"
+              className="rounded-2xl border border-border bg-white p-4 text-sm font-semibold text-foreground transition hover:-translate-y-1 hover:border-accent/40"
+            >
+              メーカー一覧
+            </Link>
+          </div>
+        </section>
       </div>
     </div>
   );
