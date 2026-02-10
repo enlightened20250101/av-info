@@ -220,6 +220,9 @@ export default async function Home({
             <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-muted">
               Genres
             </h2>
+            <Link href="/tags" className="text-xs font-semibold text-accent">
+              タグ一覧へ →
+            </Link>
           </div>
           <div className="mt-3 flex flex-wrap gap-2">
             {popularGenres.map((tag) => (
@@ -229,6 +232,30 @@ export default async function Home({
                 className="rounded-full border border-border bg-white px-3 py-1 text-[11px] font-semibold text-muted hover:border-accent/40"
               >
                 {tagLabel(tag)}
+              </Link>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      {popularTags.length > 0 ? (
+        <section className="mx-auto mt-8 w-full max-w-6xl rounded-[32px] border border-border bg-card p-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-muted">
+              Trending Tags
+            </h2>
+            <Link href="/tags" className="text-xs font-semibold text-accent">
+              もっと見る →
+            </Link>
+          </div>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {popularTags.slice(0, 8).map((tag) => (
+              <Link
+                key={tag}
+                href={`/tags/${tag}`}
+                className="rounded-2xl border border-border bg-white p-4 text-sm font-semibold text-foreground transition hover:-translate-y-1 hover:border-accent/40"
+              >
+                #{tagLabel(tag)}
               </Link>
             ))}
           </div>
