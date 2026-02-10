@@ -98,14 +98,18 @@ export default async function TagsPage({
         </header>
 
         <section className="rounded-3xl border border-border bg-white p-6">
-          <div className="flex flex-wrap gap-2">
+          <div className="grid gap-3 sm:grid-cols-2">
             {pageItems.map((tag) => (
               <Link
                 key={tag}
                 href={`/tags/${tag}`}
-                className="rounded-full border border-border bg-card px-3 py-1 text-xs font-semibold text-muted hover:border-accent/40"
+                className="group rounded-2xl border border-border bg-card p-4 transition hover:-translate-y-1 hover:border-accent/40"
               >
-                #{tagLabel(tag)}
+                <p className="text-[10px] uppercase tracking-[0.25em] text-muted">Tag</p>
+                <p className="mt-2 text-sm font-semibold">#{tagLabel(tag)}</p>
+                <p className="mt-1 text-xs text-muted line-clamp-2">
+                  {tagLabel(tag)}の関連作品・トピック
+                </p>
               </Link>
             ))}
           </div>

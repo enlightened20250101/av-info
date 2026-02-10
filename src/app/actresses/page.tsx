@@ -94,16 +94,35 @@ export default async function ActressesPage({
           {filtered.length === 0 ? (
             <p className="text-sm text-muted">まだ女優情報がありません。</p>
           ) : (
-            <div className="flex flex-wrap gap-2">
-              {pageItems.map((slug) => (
-                <Link
-                  key={slug}
-                  href={`/actresses/${slug}`}
-                  className="rounded-full border border-border bg-card px-3 py-1 text-xs font-semibold text-muted hover:border-accent/40"
-                >
-                  {slug}
-                </Link>
-              ))}
+            <div className="grid gap-3 sm:grid-cols-2">
+              {pageItems.map((slug) => {
+                const cover = works.find((work) => work.related_actresses.includes(slug))?.images?.[0]?.url;
+                return (
+                  <Link
+                    key={slug}
+                    href={`/actresses/${slug}`}
+                    className="group overflow-hidden rounded-2xl border border-border bg-card transition hover:-translate-y-1 hover:border-accent/40"
+                  >
+                    <div className="relative h-36 overflow-hidden bg-accent-soft">
+                      {cover ? (
+                        <img
+                          src={cover}
+                          alt={slug}
+                          className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
+                        />
+                      ) : (
+                        <div className="flex h-full items-center justify-center text-[10px] font-semibold uppercase tracking-[0.25em] text-accent">
+                          Actress
+                        </div>
+                      )}
+                    </div>
+                    <div className="p-4">
+                      <p className="text-sm font-semibold">{slug}</p>
+                      <p className="mt-1 text-xs text-muted">関連作品あり</p>
+                    </div>
+                  </Link>
+                );
+              })}
             </div>
           )}
         </section>
