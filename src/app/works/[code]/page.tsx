@@ -173,7 +173,7 @@ export default async function WorkPage({ params }: { params: Promise<{ code: str
               )}
             </div>
           </div>
-          <div className="rounded-3xl border border-border bg-card p-6">
+          <div className="rounded-3xl border border-border bg-card p-6 md:sticky md:top-24 md:self-start">
             <h2 className="text-lg font-semibold">概要</h2>
             <p className="mt-3 text-sm text-muted">{article.summary}</p>
             <div className="mt-4 whitespace-pre-wrap text-sm">

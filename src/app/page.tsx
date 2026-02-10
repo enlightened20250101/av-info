@@ -107,7 +107,7 @@ export default async function Home({
   );
   const popularGenres = buildPopularMetaTags(latestWorks, "genre:");
   const popularActresses = buildPopularActresses(latestWorks, 8);
-  const heroWorks = latestWorks.filter((work) => work.images[0]?.url).slice(0, 7);
+  const heroWorks = latestWorks.filter((work) => work.images[0]?.url).slice(0, 9);
   const visualWorks = latestWorks.slice(0, 12);
   const visualArticles = latestPage.slice(0, 12);
   const miniRankingLines = rankingTopics[0]?.body
@@ -126,8 +126,9 @@ export default async function Home({
   return (
     <div className="min-h-screen px-6 pb-16 pt-10 sm:px-10">
       <header className="mx-auto grid w-full max-w-6xl gap-6 lg:grid-cols-[1.2fr_1fr]">
-        <div className="relative rounded-[32px] border border-border bg-card p-6 shadow-[0_35px_80px_-55px_rgba(0,0,0,0.45)] sm:p-8">
-          <div className="luxe-glow pointer-events-none absolute -left-12 -top-16 h-48 w-48 rounded-full bg-accent/20 blur-[80px]" />
+        <div className="relative rounded-[32px] border border-border bg-[linear-gradient(135deg,rgba(255,255,255,0.98),rgba(244,244,244,0.9))] p-6 shadow-[0_35px_80px_-55px_rgba(0,0,0,0.5)] sm:p-8">
+          <div className="pointer-events-none absolute inset-0 rounded-[32px] border border-white/60" />
+          <div className="luxe-glow pointer-events-none absolute -left-12 -top-16 h-48 w-48 rounded-full bg-accent/22 blur-[90px]" />
           <div className="luxe-glow pointer-events-none absolute -right-10 -bottom-10 h-40 w-40 rounded-full bg-foreground/10 blur-[80px]" />
           <div className="flex items-center justify-between">
             <p className="text-xs uppercase tracking-[0.3em] text-muted">Auto Updates</p>
@@ -135,7 +136,7 @@ export default async function Home({
               Daily
             </div>
           </div>
-          <h1 className="mt-6 text-4xl font-semibold tracking-tight sm:text-5xl">
+          <h1 className="mt-6 text-3xl font-semibold tracking-tight sm:text-4xl">
             {SITE.name}
           </h1>
           <p className="mt-3 text-sm text-muted">{SITE.description}</p>
@@ -208,7 +209,7 @@ export default async function Home({
             </div>
           ) : null}
         </div>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+        <div className="grid auto-rows-[140px] grid-cols-3 gap-3">
           {heroWorks.length === 0 ? (
             <div className="col-span-3 flex min-h-[220px] items-center justify-center rounded-[28px] border border-border bg-card text-sm text-muted">
               No Images
@@ -219,22 +220,20 @@ export default async function Home({
                 key={work.id}
                 href={`/works/${work.slug}`}
                 className={`group relative overflow-hidden rounded-[24px] border border-border bg-white shadow-[0_20px_50px_-35px_rgba(0,0,0,0.45)] luxe-fade ${
-                  index === 0 ? "sm:col-span-2" : ""
-                } ${index === 1 ? "luxe-delay-1" : index === 2 ? "luxe-delay-2" : index === 3 ? "luxe-delay-3" : index === 4 ? "luxe-delay-4" : index === 5 ? "luxe-delay-5" : ""}`}
+                  index === 0 ? "col-span-2 row-span-2" : ""
+                } ${index === 1 ? "luxe-delay-1" : index === 2 ? "luxe-delay-2" : index === 3 ? "luxe-delay-3" : index === 4 ? "luxe-delay-4" : index === 5 ? "luxe-delay-5" : index === 6 ? "luxe-delay-6" : index === 7 ? "luxe-delay-7" : ""}`}
               >
-                <div className="relative aspect-[16/9] w-full">
-                  <img
-                    src={work.images[0]?.url ?? ""}
-                    alt={work.images[0]?.alt ?? work.title}
-                    className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/0 to-transparent opacity-90" />
-                  <div className="absolute bottom-3 left-3 right-3">
-                    <p className="text-[10px] uppercase tracking-[0.25em] text-white/70">NEW</p>
-                    <p className="mt-1 text-sm font-semibold text-white line-clamp-2">
-                      {work.title}
-                    </p>
-                  </div>
+                <img
+                  src={work.images[0]?.url ?? ""}
+                  alt={work.images[0]?.alt ?? work.title}
+                  className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/0 to-transparent opacity-90" />
+                <div className="absolute bottom-3 left-3 right-3">
+                  <p className="text-[10px] uppercase tracking-[0.25em] text-white/70">NEW</p>
+                  <p className="mt-1 text-sm font-semibold text-white line-clamp-2">
+                    {work.title}
+                  </p>
                 </div>
               </Link>
             ))
