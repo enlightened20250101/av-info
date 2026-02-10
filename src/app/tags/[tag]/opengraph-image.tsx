@@ -37,7 +37,8 @@ function brandBadge() {
 }
 
 export default function OpenGraphImage({ params }: { params: { tag: string } }) {
-  const title = `#${tagLabel(params.tag)}`;
+  const label = tagLabel(params.tag) || params.tag || "タグ";
+  const title = `#${label}`;
 
   return new ImageResponse(
     (

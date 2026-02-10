@@ -61,7 +61,7 @@ export function extractMetaTagsFromBody(body: string) {
 }
 
 export function tagLabel(tag: string) {
-  if (!tag) return "";
+  if (!tag) return "タグ";
   if (tag.startsWith("maker:")) return `メーカー:${tag.replace("maker:", "")}`;
   if (tag.startsWith("genre:")) return `ジャンル:${tag.replace("genre:", "")}`;
   const labels: Record<string, string> = {

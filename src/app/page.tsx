@@ -53,6 +53,27 @@ function buildPopularMetaTags(works: Article[], prefix: string, limit = 8) {
     .map(([tag]) => tag);
 }
 
+function buildPopularActresses(works: Article[], limit = 8) {
+  const counts = new Map<string, number>();
+  const sampleImage = new Map<string, string | null>();
+  works.forEach((work) => {
+    work.related_actresses.forEach((slug) => {
+      counts.set(slug, (counts.get(slug) ?? 0) + 1);
+      if (!sampleImage.has(slug)) {
+        sampleImage.set(slug, work.images?.[0]?.url ?? null);
+      }
+    });
+  });
+
+  return Array.from(counts.entries())
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, limit)
+    .map(([slug, count]) => ({
+      slug,
+      count,
+      image: sampleImage.get(slug) ?? null,
+    }));
+}
 export default async function Home({
   searchParams,
 }: {
@@ -85,6 +106,7 @@ export default async function Home({
     dailyTopics.map((topic) => `${topic.title} ${topic.summary}`)
   );
   const popularGenres = buildPopularMetaTags(latestWorks, "genre:");
+  const popularActresses = buildPopularActresses(latestWorks, 8);
   const heroWorks = latestWorks.filter((work) => work.images[0]?.url).slice(0, 7);
   const visualWorks = latestWorks.slice(0, 12);
   const visualArticles = latestPage.slice(0, 12);
@@ -260,6 +282,46 @@ export default async function Home({
                 className="rounded-2xl border border-border bg-white p-4 text-sm font-semibold text-foreground transition hover:-translate-y-1 hover:border-accent/40"
               >
                 #{tagLabel(tag)}
+              </Link>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      {popularActresses.length > 0 ? (
+        <section className="mx-auto mt-8 w-full max-w-6xl rounded-[32px] border border-border bg-card p-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-muted">
+              Popular Actresses
+            </h2>
+            <Link href="/actresses" className="text-xs font-semibold text-accent">
+              女優一覧へ →
+            </Link>
+          </div>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {popularActresses.map((actress) => (
+              <Link
+                key={actress.slug}
+                href={`/actresses/${actress.slug}`}
+                className="group overflow-hidden rounded-2xl border border-border bg-white transition hover:-translate-y-1 hover:border-accent/40"
+              >
+                <div className="relative h-24 overflow-hidden bg-accent-soft">
+                  {actress.image ? (
+                    <img
+                      src={actress.image}
+                      alt={actress.slug}
+                      className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
+                    />
+                  ) : (
+                    <div className="flex h-full items-center justify-center text-[10px] font-semibold uppercase tracking-[0.25em] text-accent">
+                      Actress
+                    </div>
+                  )}
+                </div>
+                <div className="p-4">
+                  <p className="text-sm font-semibold">{actress.slug}</p>
+                  <p className="mt-1 text-xs text-muted">関連 {actress.count} 作品</p>
+                </div>
               </Link>
             ))}
           </div>

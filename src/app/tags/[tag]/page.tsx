@@ -14,15 +14,16 @@ export async function generateMetadata({
 }: {
   params: { tag: string };
 }): Promise<Metadata> {
+  const label = tagLabel(params.tag) || params.tag || "タグ";
   return {
-    title: `#${tagLabel(params.tag)} | タグ | ${SITE.name}`,
-    description: `タグ「${tagLabel(params.tag)}」に関連する記事一覧。`,
+    title: `#${label} | タグ | ${SITE.name}`,
+    description: `タグ「${label}」に関連する記事一覧。`,
     alternates: {
       canonical: `${SITE.url.replace(/\/$/, "")}/tags/${params.tag}`,
     },
     openGraph: {
-      title: `#${tagLabel(params.tag)} | タグ | ${SITE.name}`,
-      description: `タグ「${tagLabel(params.tag)}」に関連する記事一覧。`,
+      title: `#${label} | タグ | ${SITE.name}`,
+      description: `タグ「${label}」に関連する記事一覧。`,
       type: "website",
     },
   };
@@ -61,7 +62,7 @@ export default async function TagPage({ params }: { params: { tag: string } }) {
   const articles = await getLatestArticles(200);
   const works = await getLatestByType("work", 60);
   const topics = await getLatestByType("topic", 60);
-  const keyword = tagLabel(params.tag);
+  const keyword = tagLabel(params.tag) || params.tag || "タグ";
   const trend = buildTagTrendFromArticles(params.tag, articles);
   const base = SITE.url.replace(/\/$/, "");
   const structuredData = {
