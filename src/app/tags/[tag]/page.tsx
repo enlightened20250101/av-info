@@ -20,6 +20,10 @@ export async function generateMetadata({
   return {
     title: `#${label} エロ動画・作品 | ${SITE.name}`,
     description: `#${label}のエロ動画・関連作品をまとめて紹介。話題の作品やトピックをチェックできます。`,
+    robots: {
+      index: true,
+      follow: true,
+    },
     alternates: {
       canonical: `${SITE.url.replace(/\/$/, "")}/tags/${encodeURIComponent(normalizedTag)}`,
     },
@@ -115,6 +119,13 @@ export default async function TagPage({ params }: { params: Promise<{ tag: strin
   const relatedActresses = Array.from(
     new Set(popularWorks.flatMap((work) => work.related_actresses))
   ).slice(0, 8);
+  const relatedTags = Array.from(
+    new Set(
+      popularWorks.flatMap((work) =>
+        extractMetaTagsFromBody(work.body).filter((tag) => tag !== normalizedTag)
+      )
+    )
+  ).slice(0, 10);
   const itemList = {
     "@context": "https://schema.org",
     "@type": "ItemList",
@@ -281,6 +292,23 @@ export default async function TagPage({ params }: { params: Promise<{ tag: strin
             </div>
           )}
         </section>
+
+        {relatedTags.length > 0 ? (
+          <section className="rounded-3xl border border-border bg-card p-6">
+            <h2 className="text-lg font-semibold">関連タグ</h2>
+            <div className="mt-4 flex flex-wrap gap-2">
+              {relatedTags.map((tag) => (
+                <Link
+                  key={tag}
+                  href={`/tags/${encodeURIComponent(tag)}`}
+                  className="rounded-full border border-border bg-white px-3 py-1 text-xs font-semibold text-muted hover:border-accent/40"
+                >
+                  {tagLabel(tag)}
+                </Link>
+              ))}
+            </div>
+          </section>
+        ) : null}
 
         <section className="rounded-3xl border border-border bg-card p-6">
           <h2 className="text-lg font-semibold">今日のトピック</h2>

@@ -17,6 +17,10 @@ export async function generateMetadata({
   return {
     title: `${slug} エロ動画・出演作品 | ${SITE.name}`,
     description: `${slug}のエロ動画・出演作品をまとめて紹介。最新の関連作品をチェックできます。`,
+    robots: {
+      index: true,
+      follow: true,
+    },
     alternates: {
       canonical: `${SITE.url.replace(/\/$/, "")}/actresses/${encodeURIComponent(slug)}`,
     },
@@ -60,6 +64,14 @@ export default async function ActressPage({ params }: { params: Promise<{ slug: 
       works.flatMap((work) =>
         extractMetaTagsFromBody(work.body).filter((tag) => tag.startsWith("genre:"))
       )
+    )
+  ).slice(0, 8);
+  const relatedActresses = Array.from(
+    new Set(
+      latestWorks
+        .filter((work) => work.related_actresses.includes(slug))
+        .flatMap((work) => work.related_actresses)
+        .filter((name) => name !== slug)
     )
   ).slice(0, 8);
   const faqLd = {
@@ -212,6 +224,23 @@ export default async function ActressPage({ params }: { params: Promise<{ slug: 
                   className="rounded-full border border-border bg-white px-3 py-1 text-xs font-semibold text-muted hover:border-accent/40"
                 >
                   {tag.replace("genre:", "")}
+                </Link>
+              ))}
+            </div>
+          </section>
+        ) : null}
+
+        {relatedActresses.length > 0 ? (
+          <section className="rounded-3xl border border-border bg-card p-6">
+            <h2 className="text-lg font-semibold">関連女優</h2>
+            <div className="mt-4 flex flex-wrap gap-2">
+              {relatedActresses.map((name) => (
+                <Link
+                  key={name}
+                  href={`/actresses/${encodeURIComponent(name)}`}
+                  className="rounded-full border border-border bg-white px-3 py-1 text-xs font-semibold text-muted hover:border-accent/40"
+                >
+                  {name}
                 </Link>
               ))}
             </div>

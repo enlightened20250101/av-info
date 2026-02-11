@@ -58,6 +58,10 @@ export async function generateMetadata({
   return {
     title: `${article.title} (${article.slug}) | エロ動画 | ${SITE.name}`,
     description: `${article.title}のエロ動画・作品情報。${article.summary}`,
+    robots: {
+      index: true,
+      follow: true,
+    },
     alternates: {
       canonical: `${SITE.url.replace(/\/$/, "")}/works/${article.slug}`,
     },
@@ -119,6 +123,20 @@ export default async function WorkPage({ params }: { params: Promise<{ code: str
         !sameGenreWorks.some((picked) => picked.slug === work.slug)
     )
     .slice(0, 6);
+  const relatedList = [...sameGenreWorks, ...fallbackWorks].slice(0, 12);
+  const relatedItemList = relatedList.length
+    ? {
+        "@context": "https://schema.org",
+        "@type": "ItemList",
+        name: `${article.title}の関連作品`,
+        itemListElement: relatedList.map((work, index) => ({
+          "@type": "ListItem",
+          position: index + 1,
+          url: `${base}/works/${work.slug}`,
+          name: work.title,
+        })),
+      }
+    : null;
   const structuredData = {
     "@context": "https://schema.org",
     "@type": "Article",
@@ -200,6 +218,13 @@ export default async function WorkPage({ params }: { params: Promise<{ code: str
         // eslint-disable-next-line react/no-danger
         dangerouslySetInnerHTML={{ __html: JSON.stringify(videoLd) }}
       />
+      {relatedItemList ? (
+        <script
+          type="application/ld+json"
+          // eslint-disable-next-line react/no-danger
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(relatedItemList) }}
+        />
+      ) : null}
       <script
         type="application/ld+json"
         // eslint-disable-next-line react/no-danger
