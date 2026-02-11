@@ -201,6 +201,19 @@ export default async function TagPage({ params }: { params: Promise<{ tag: strin
           <p className="mt-2 text-sm text-muted">
             #{keyword}のエロ動画・関連作品をまとめて紹介。最新の人気作品をチェックできます。
           </p>
+          {relatedTags.length > 0 ? (
+            <p className="mt-2 text-sm text-muted">
+              関連タグ:{" "}
+              {relatedTags.slice(0, 4).map((tag, index) => (
+                <span key={tag}>
+                  <Link href={`/tags/${encodeURIComponent(tag)}`} className="text-accent">
+                    {tagLabel(tag)}
+                  </Link>
+                  {index < Math.min(relatedTags.length, 4) - 1 ? " / " : ""}
+                </span>
+              ))}
+            </p>
+          ) : null}
           <p className="mt-2 text-xs text-muted">関連記事 {matched.length}件</p>
         </header>
 

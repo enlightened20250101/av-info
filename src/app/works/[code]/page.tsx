@@ -285,6 +285,39 @@ export default async function WorkPage({ params }: { params: Promise<{ code: str
             <div className="mt-4 whitespace-pre-wrap text-sm">
               {highlightKeywords(article.body, keywordPool)}
             </div>
+            {(article.related_actresses.length > 0 || metaTags.length > 0) ? (
+              <div className="mt-4 rounded-2xl border border-border bg-white p-4 text-sm text-muted">
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted">
+                  関連リンク
+                </p>
+                {article.related_actresses.length > 0 ? (
+                  <p className="mt-2">
+                    出演女優:{" "}
+                    {article.related_actresses.slice(0, 3).map((name, index) => (
+                      <span key={name}>
+                        <Link href={`/actresses/${encodeURIComponent(name)}`} className="text-accent">
+                          {name}
+                        </Link>
+                        {index < Math.min(article.related_actresses.length, 3) - 1 ? " / " : ""}
+                      </span>
+                    ))}
+                  </p>
+                ) : null}
+                {metaTags.length > 0 ? (
+                  <p className="mt-2">
+                    人気タグ:{" "}
+                    {metaTags.slice(0, 3).map((tag, index) => (
+                      <span key={tag}>
+                        <Link href={`/tags/${encodeURIComponent(tag)}`} className="text-accent">
+                          {tagLabel(tag)}
+                        </Link>
+                        {index < Math.min(metaTags.length, 3) - 1 ? " / " : ""}
+                      </span>
+                    ))}
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
             {metaTags.length > 0 ? (
               <div className="mt-4 flex flex-wrap gap-2">
                 {metaTags.map((tag) => (

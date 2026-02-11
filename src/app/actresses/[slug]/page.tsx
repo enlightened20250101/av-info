@@ -132,6 +132,19 @@ export default async function ActressPage({ params }: { params: Promise<{ slug: 
           <p className="mt-2 text-sm text-muted">
             {slug}のエロ動画・出演作品をまとめて紹介。関連作品 {works.length}件
           </p>
+          {relatedTagsFromWorks.length > 0 ? (
+            <p className="mt-2 text-sm text-muted">
+              人気ジャンル:{" "}
+              {relatedTagsFromWorks.slice(0, 3).map((tag, index) => (
+                <span key={tag}>
+                  <Link href={`/tags/${encodeURIComponent(tag)}`} className="text-accent">
+                    {tag.replace("genre:", "")}
+                  </Link>
+                  {index < Math.min(relatedTagsFromWorks.length, 3) - 1 ? " / " : ""}
+                </span>
+              ))}
+            </p>
+          ) : null}
         </header>
 
         <section className="rounded-3xl border border-border bg-white p-6">
