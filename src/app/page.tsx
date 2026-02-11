@@ -143,13 +143,13 @@ export default async function Home({
           <div className="mt-6 flex flex-wrap gap-2">
             <Link
               href="/works"
-              className="rounded-full bg-accent px-5 py-2 text-xs font-semibold text-white shadow-[0_10px_30px_-20px_rgba(0,0,0,0.6)] hover:bg-accent/90"
+              className="pressable rounded-full bg-accent px-5 py-2 text-xs font-semibold text-white shadow-[0_10px_30px_-20px_rgba(0,0,0,0.6)] hover:bg-accent/90"
             >
               作品を見る
             </Link>
             <Link
               href="/topics"
-              className="rounded-full border border-border bg-white px-5 py-2 text-xs font-semibold text-muted hover:border-accent/40"
+              className="pressable rounded-full border border-border bg-white px-5 py-2 text-xs font-semibold text-muted hover:border-accent/40"
             >
               トピックへ
             </Link>
@@ -163,7 +163,7 @@ export default async function Home({
               />
               <button
                 type="submit"
-                className="rounded-2xl bg-accent px-5 py-3 text-sm font-semibold text-white"
+                className="pressable rounded-2xl bg-accent px-5 py-3 text-sm font-semibold text-white"
               >
                 検索
               </button>
@@ -219,7 +219,7 @@ export default async function Home({
               <Link
                 key={work.id}
                 href={`/works/${work.slug}`}
-                className={`group relative overflow-hidden rounded-[24px] border border-border bg-white shadow-[0_20px_50px_-35px_rgba(0,0,0,0.45)] luxe-fade ${
+                className={`group pressable relative overflow-hidden rounded-[24px] border border-border bg-white shadow-[0_20px_50px_-35px_rgba(0,0,0,0.45)] luxe-fade ${
                   index === 0 ? "col-span-2 row-span-2" : ""
                 } ${index === 1 ? "luxe-delay-1" : index === 2 ? "luxe-delay-2" : index === 3 ? "luxe-delay-3" : index === 4 ? "luxe-delay-4" : index === 5 ? "luxe-delay-5" : index === 6 ? "luxe-delay-6" : index === 7 ? "luxe-delay-7" : ""}`}
               >
