@@ -15,8 +15,8 @@ export async function generateMetadata({
   const { slug: rawSlug } = await params;
   const slug = decodeURIComponent(rawSlug);
   return {
-    title: `${slug} エロ動画・出演作品 | ${SITE.name}`,
-    description: `${slug}のエロ動画・出演作品をまとめて紹介。最新の関連作品をチェックできます。`,
+    title: `${slug} エロ動画・動画・出演作品 | ${SITE.name}`,
+    description: `${slug}のエロ動画・動画・出演作品をまとめて紹介。最新の関連作品をチェックできます。`,
     robots: {
       index: true,
       follow: true,
@@ -25,8 +25,8 @@ export async function generateMetadata({
       canonical: `${SITE.url.replace(/\/$/, "")}/actresses/${encodeURIComponent(slug)}`,
     },
     openGraph: {
-      title: `${slug} エロ動画・出演作品 | ${SITE.name}`,
-      description: `${slug}のエロ動画・出演作品をまとめて紹介。`,
+      title: `${slug} エロ動画・動画・出演作品 | ${SITE.name}`,
+      description: `${slug}のエロ動画・動画・出演作品をまとめて紹介。`,
       type: "profile",
     },
   };

@@ -18,8 +18,8 @@ export async function generateMetadata({
   const normalizedTag = normalizeTag(tag) || tag || "タグ";
   const label = tagLabel(normalizedTag);
   return {
-    title: `#${label} エロ動画・作品 | ${SITE.name}`,
-    description: `#${label}のエロ動画・関連作品をまとめて紹介。話題の作品やトピックをチェックできます。`,
+    title: `#${label} エロ動画・動画・作品 | ${SITE.name}`,
+    description: `#${label}のエロ動画・動画・関連作品をまとめて紹介。話題の作品やトピックをチェックできます。`,
     robots: {
       index: true,
       follow: true,
@@ -28,8 +28,8 @@ export async function generateMetadata({
       canonical: `${SITE.url.replace(/\/$/, "")}/tags/${encodeURIComponent(normalizedTag)}`,
     },
     openGraph: {
-      title: `#${label} エロ動画・作品 | ${SITE.name}`,
-      description: `#${label}のエロ動画・関連作品をまとめて紹介。`,
+      title: `#${label} エロ動画・動画・作品 | ${SITE.name}`,
+      description: `#${label}のエロ動画・動画・関連作品をまとめて紹介。`,
       type: "website",
     },
   };
