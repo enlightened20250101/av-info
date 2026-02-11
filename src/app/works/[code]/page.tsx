@@ -56,14 +56,14 @@ export async function generateMetadata({
   }
 
   return {
-    title: `${article.title} (${article.slug}) | ${SITE.name}`,
-    description: article.summary,
+    title: `${article.title} (${article.slug}) | エロ動画 | ${SITE.name}`,
+    description: `${article.title}のエロ動画・作品情報。${article.summary}`,
     alternates: {
       canonical: `${SITE.url.replace(/\/$/, "")}/works/${article.slug}`,
     },
     openGraph: {
-      title: `${article.title} (${article.slug}) | ${SITE.name}`,
-      description: article.summary,
+      title: `${article.title} (${article.slug}) | エロ動画 | ${SITE.name}`,
+      description: `${article.title}のエロ動画・作品情報。${article.summary}`,
       type: "article",
       images: article.images?.[0]?.url ? [{ url: article.images[0].url }] : undefined,
     },
@@ -331,7 +331,7 @@ export default async function WorkPage({ params }: { params: Promise<{ code: str
         <div className="fixed inset-x-0 bottom-4 z-40 px-4">
           <a
             href={article.affiliate_url}
-            className="mx-auto flex w-full max-w-3xl items-center justify-center rounded-full bg-accent px-6 py-4 text-base font-semibold text-white shadow-xl transition hover:-translate-y-0.5 hover:shadow-2xl animate-bounce"
+            className="pressable mx-auto flex w-full max-w-3xl items-center justify-center rounded-full bg-accent px-6 py-4 text-base font-semibold text-white shadow-xl transition hover:-translate-y-0.5 hover:shadow-2xl animate-bounce"
             target="_blank"
             rel="noopener noreferrer"
             style={{ textShadow: "0 1px 2px rgba(0, 0, 0, 0.45)" }}

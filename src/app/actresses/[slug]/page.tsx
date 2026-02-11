@@ -15,14 +15,14 @@ export async function generateMetadata({
   const { slug: rawSlug } = await params;
   const slug = decodeURIComponent(rawSlug);
   return {
-    title: `${slug} | 女優ページ | ${SITE.name}`,
-    description: `${slug}の関連作品一覧。`,
+    title: `${slug} エロ動画・出演作品 | ${SITE.name}`,
+    description: `${slug}のエロ動画・出演作品をまとめて紹介。最新の関連作品をチェックできます。`,
     alternates: {
       canonical: `${SITE.url.replace(/\/$/, "")}/actresses/${encodeURIComponent(slug)}`,
     },
     openGraph: {
-      title: `${slug} | 女優ページ | ${SITE.name}`,
-      description: `${slug}の関連作品一覧。`,
+      title: `${slug} エロ動画・出演作品 | ${SITE.name}`,
+      description: `${slug}のエロ動画・出演作品をまとめて紹介。`,
       type: "profile",
     },
   };
@@ -32,6 +32,18 @@ export default async function ActressPage({ params }: { params: Promise<{ slug: 
   const { slug: rawSlug } = await params;
   const slug = decodeURIComponent(rawSlug);
   const works = await findWorksByActressSlug(slug, 20);
+  const base = SITE.url.replace(/\/$/, "");
+  const itemList = {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    name: `${slug}の関連作品`,
+    itemListElement: works.slice(0, 12).map((work, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      url: `${base}/works/${work.slug}`,
+      name: work.title,
+    })),
+  };
   const latestWorks = await getLatestByType("work", 120);
   const relatedTags = Array.from(
     new Set(
@@ -47,6 +59,11 @@ export default async function ActressPage({ params }: { params: Promise<{ slug: 
   return (
     <div className="min-h-screen px-6 pb-16 pt-12 sm:px-10">
       <div className="mx-auto flex max-w-4xl flex-col gap-5">
+        <script
+          type="application/ld+json"
+          // eslint-disable-next-line react/no-danger
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(itemList) }}
+        />
         <Breadcrumbs
           items={[
             { label: "Home", href: "/" },
@@ -57,7 +74,9 @@ export default async function ActressPage({ params }: { params: Promise<{ slug: 
         <header className="rounded-3xl border border-border bg-card p-6">
           <p className="text-xs text-muted">actress</p>
           <h1 className="mt-2 text-3xl font-semibold">{slug}</h1>
-          <p className="mt-2 text-sm text-muted">関連作品 {works.length}件</p>
+          <p className="mt-2 text-sm text-muted">
+            {slug}のエロ動画・出演作品をまとめて紹介。関連作品 {works.length}件
+          </p>
         </header>
 
         <section className="rounded-3xl border border-border bg-white p-6">

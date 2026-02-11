@@ -18,14 +18,14 @@ export async function generateMetadata({
   const normalizedTag = normalizeTag(tag) || tag || "タグ";
   const label = tagLabel(normalizedTag);
   return {
-    title: `#${label} | タグ | ${SITE.name}`,
-    description: `タグ「${label}」に関連する記事一覧。`,
+    title: `#${label} エロ動画・作品 | ${SITE.name}`,
+    description: `#${label}のエロ動画・関連作品をまとめて紹介。話題の作品やトピックをチェックできます。`,
     alternates: {
       canonical: `${SITE.url.replace(/\/$/, "")}/tags/${encodeURIComponent(normalizedTag)}`,
     },
     openGraph: {
-      title: `#${label} | タグ | ${SITE.name}`,
-      description: `タグ「${label}」に関連する記事一覧。`,
+      title: `#${label} エロ動画・作品 | ${SITE.name}`,
+      description: `#${label}のエロ動画・関連作品をまとめて紹介。`,
       type: "website",
     },
   };
@@ -74,7 +74,7 @@ export default async function TagPage({ params }: { params: Promise<{ tag: strin
     "@type": "CollectionPage",
     name: `#${keyword}`,
     url: `${base}/tags/${encodeURIComponent(normalizedTag)}`,
-    description: `タグ「${keyword}」に関連する記事一覧。`,
+    description: `#${keyword}のエロ動画・関連作品をまとめて紹介。`,
   };
 
   const matched = articles.filter((article) => {
@@ -115,6 +115,17 @@ export default async function TagPage({ params }: { params: Promise<{ tag: strin
   const relatedActresses = Array.from(
     new Set(popularWorks.flatMap((work) => work.related_actresses))
   ).slice(0, 8);
+  const itemList = {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    name: `#${keyword}の人気作品`,
+    itemListElement: popularWorks.slice(0, 12).map((work, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      url: `${base}/works/${work.slug}`,
+      name: work.title,
+    })),
+  };
 
   return (
     <div className="min-h-screen px-6 pb-16 pt-12 sm:px-10">
@@ -122,6 +133,11 @@ export default async function TagPage({ params }: { params: Promise<{ tag: strin
         type="application/ld+json"
         // eslint-disable-next-line react/no-danger
         dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+      />
+      <script
+        type="application/ld+json"
+        // eslint-disable-next-line react/no-danger
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(itemList) }}
       />
       <div className="mx-auto flex max-w-4xl flex-col gap-6">
         <Breadcrumbs
@@ -135,6 +151,9 @@ export default async function TagPage({ params }: { params: Promise<{ tag: strin
           <p className="text-xs text-muted">tag</p>
           <h1 className="mt-2 text-3xl font-semibold">#{keyword}</h1>
           <p className="mt-2 text-sm text-muted">{tagSummary(normalizedTag)}</p>
+          <p className="mt-2 text-sm text-muted">
+            #{keyword}のエロ動画・関連作品をまとめて紹介。最新の人気作品をチェックできます。
+          </p>
           <p className="mt-2 text-xs text-muted">関連記事 {matched.length}件</p>
         </header>
 
