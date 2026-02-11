@@ -58,7 +58,7 @@ export default async function ActressPage({ params }: { params: Promise<{ slug: 
   ).slice(0, 6);
   const recommendedWorks = latestWorks
     .filter((work) => work.related_actresses.includes(slug))
-    .slice(0, 6);
+    .slice(0, 8);
   const relatedTagsFromWorks = Array.from(
     new Set(
       works.flatMap((work) =>
@@ -73,7 +73,8 @@ export default async function ActressPage({ params }: { params: Promise<{ slug: 
         .flatMap((work) => work.related_actresses)
         .filter((name) => name !== slug)
     )
-  ).slice(0, 8);
+  ).slice(0, 12);
+  const recentWorks = works.slice(0, 12);
   const faqLd = {
     "@context": "https://schema.org",
     "@type": "FAQPage",
@@ -166,6 +167,42 @@ export default async function ActressPage({ params }: { params: Promise<{ slug: 
             </div>
           )}
         </section>
+
+        {recentWorks.length > 0 ? (
+          <section className="rounded-3xl border border-border bg-card p-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold">最新の出演作品</h2>
+              <span className="text-xs text-muted">最新12件</span>
+            </div>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              {recentWorks.map((work) => (
+                <Link
+                  key={work.id}
+                  href={`/works/${work.slug}`}
+                  className="group overflow-hidden rounded-2xl border border-border bg-white transition hover:-translate-y-1 hover:border-accent/40"
+                >
+                  {work.images?.[0]?.url ? (
+                    <img
+                      src={work.images[0].url}
+                      alt={work.images[0].alt}
+                      loading="lazy"
+                      decoding="async"
+                      className="h-32 w-full object-cover transition duration-500 group-hover:scale-[1.03]"
+                    />
+                  ) : (
+                    <div className="flex h-32 items-center justify-center bg-accent-soft text-xs text-accent">
+                      No Image
+                    </div>
+                  )}
+                  <div className="p-4">
+                    <p className="text-xs text-muted">{work.slug}</p>
+                    <p className="mt-1 text-sm font-semibold">{work.title}</p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </section>
+        ) : null}
 
         {recommendedWorks.length > 0 ? (
           <section className="rounded-3xl border border-border bg-card p-6">

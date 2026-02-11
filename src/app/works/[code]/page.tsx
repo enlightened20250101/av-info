@@ -107,6 +107,9 @@ export default async function WorkPage({ params }: { params: Promise<{ code: str
       return topicTags.some((tag) => baseTags.includes(tag));
     })
     .slice(0, 4);
+  const recentWorks = (await getLatestByType("work", 120))
+    .filter((work) => work.slug !== article.slug)
+    .slice(0, 12);
   const sameGenre = metaTags.find((tag) => tag.startsWith("genre:"));
   const sameGenreWorks = sameGenre
     ? (await getLatestByType("work", 160))
@@ -464,6 +467,44 @@ export default async function WorkPage({ params }: { params: Promise<{ code: str
                   <p className="text-xs text-muted">{topic.slug}</p>
                   <p className="mt-1 text-sm font-semibold">{topic.title}</p>
                   <p className="mt-1 text-xs text-muted line-clamp-2">{topic.summary}</p>
+                </Link>
+              ))}
+            </div>
+          </section>
+        ) : null}
+
+        {recentWorks.length > 0 ? (
+          <section className="rounded-3xl border border-border bg-card p-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold">最新の作品</h2>
+              <Link href="/works" className="text-xs font-semibold text-accent">
+                作品一覧へ →
+              </Link>
+            </div>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {recentWorks.map((work) => (
+                <Link
+                  key={work.id}
+                  href={`/works/${work.slug}`}
+                  className="group overflow-hidden rounded-2xl border border-border bg-white transition hover:-translate-y-1 hover:border-accent/40"
+                >
+                  {work.images?.[0]?.url ? (
+                    <img
+                      src={work.images[0].url}
+                      alt={work.images[0].alt}
+                      loading="lazy"
+                      decoding="async"
+                      className="h-28 w-full object-cover transition duration-500 group-hover:scale-[1.03]"
+                    />
+                  ) : (
+                    <div className="flex h-28 items-center justify-center bg-accent-soft text-xs text-accent">
+                      No Image
+                    </div>
+                  )}
+                  <div className="p-4">
+                    <p className="text-xs text-muted">{work.slug}</p>
+                    <p className="mt-1 text-sm font-semibold">{work.title}</p>
+                  </div>
                 </Link>
               ))}
             </div>

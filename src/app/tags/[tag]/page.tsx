@@ -118,14 +118,15 @@ export default async function TagPage({ params }: { params: Promise<{ tag: strin
 
   const relatedActresses = Array.from(
     new Set(popularWorks.flatMap((work) => work.related_actresses))
-  ).slice(0, 8);
+  ).slice(0, 12);
   const relatedTags = Array.from(
     new Set(
       popularWorks.flatMap((work) =>
         extractMetaTagsFromBody(work.body).filter((tag) => tag !== normalizedTag)
       )
     )
-  ).slice(0, 10);
+  ).slice(0, 16);
+  const recentTagArticles = matched.slice(0, 12);
   const itemList = {
     "@context": "https://schema.org",
     "@type": "ItemList",
@@ -391,6 +392,30 @@ export default async function TagPage({ params }: { params: Promise<{ tag: strin
             </div>
           )}
         </section>
+
+        {recentTagArticles.length > 0 ? (
+          <section className="rounded-3xl border border-border bg-card p-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold">このタグの最新記事</h2>
+              <span className="text-xs text-muted">最新12件</span>
+            </div>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              {recentTagArticles.map((article) => (
+                <Link
+                  key={article.id}
+                  href={`/${article.type === "work" ? "works" : article.type === "actress" ? "actresses" : "topics"}/${article.slug}`}
+                  className="group overflow-hidden rounded-2xl border border-border bg-white transition hover:-translate-y-1 hover:border-accent/40"
+                >
+                  <div className="p-4">
+                    <p className="text-xs text-muted">{article.type}</p>
+                    <p className="mt-1 text-sm font-semibold">{article.title}</p>
+                    <p className="mt-1 text-xs text-muted line-clamp-2">{article.summary}</p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </section>
+        ) : null}
 
         <section className="rounded-3xl border border-border bg-card p-6">
           <h2 className="text-lg font-semibold">もっと見る</h2>
