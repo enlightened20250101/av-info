@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Metadata } from "next";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import { buildPagination } from "@/lib/pagination";
-import { getLatestByType } from "@/lib/db";
+import { getLatestByTypePage, searchArticlesPage } from "@/lib/db";
 import { SITE } from "@/lib/site";
 
 export const dynamic = "force-dynamic";
@@ -29,18 +29,14 @@ export default async function TopicsPage({
   const query = (sp.q ?? "").trim().toLowerCase();
   const page = Math.max(1, Number(sp.page ?? "1") || 1);
   const perPage = 20;
-  const topics = await getLatestByType("topic", 120);
-  const filtered = query
-    ? topics.filter((topic) =>
-        `${topic.title} ${topic.summary} ${topic.slug}`
-          .toLowerCase()
-          .includes(query)
-      )
-    : topics;
-  const totalPages = Math.max(1, Math.ceil(filtered.length / perPage));
+  const result = query
+    ? await searchArticlesPage({ query, type: "topic", page, perPage })
+    : await getLatestByTypePage("topic", page, perPage);
+  const filtered = result.items;
+  const totalPages = Math.max(1, Math.ceil(result.total / perPage));
   const safePage = Math.min(page, totalPages);
   const start = (safePage - 1) * perPage;
-  const pageItems = filtered.slice(start, start + perPage);
+  const pageItems = filtered;
   const baseParams = new URLSearchParams();
   if (sp.q) baseParams.set("q", sp.q);
 
