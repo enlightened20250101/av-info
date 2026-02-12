@@ -208,19 +208,34 @@ export async function getArticleBySlug(slug: string) {
 
 export async function findWorksByActressSlug(actressSlug: string, limit = 8) {
   const client = getSupabase();
+  const preferredLimit = Math.max(limit, 50);
   const { data, error } = await client
     .from("articles")
     .select("*")
     .eq("type", "work")
     .contains("related_actresses", [actressSlug])
     .order("published_at", { ascending: false })
-    .limit(Math.max(limit, 50));
+    .limit(preferredLimit);
 
-  if (error) {
-    throw error;
+  if (!error) {
+    return (data ?? [])
+      .map((row) => normalizeArticle(row as Article))
+      .slice(0, limit);
   }
 
-  return (data ?? [])
+  // Fallback: older rows may have non-array JSON; avoid hard failure.
+  const fallback = await client
+    .from("articles")
+    .select("*")
+    .eq("type", "work")
+    .order("published_at", { ascending: false })
+    .limit(200);
+  if (fallback.error) {
+    throw fallback.error;
+  }
+
+  return (fallback.data ?? [])
     .map((row) => normalizeArticle(row as Article))
+    .filter((row) => row.related_actresses.includes(actressSlug))
     .slice(0, limit);
 }
