@@ -7,6 +7,8 @@ const FANZA_ENDPOINT = "https://api.dmm.com/affiliate/v3/ItemList";
 type FetchFanzaOptions = {
   skipSlugs?: Set<string>;
   targetNew?: number;
+  offsetStart?: number;
+  maxPages?: number;
 };
 
 function buildLitevideoEmbedHtml(contentId: string, affiliateId: string, size: string) {
@@ -35,7 +37,7 @@ export async function fetchFanzaWorks(options: FetchFanzaOptions = {}): Promise<
   const floorValue = getEnv("DMM_FLOOR", "videoa");
 
   const perPage = Math.min(100, Math.max(hits, 20));
-  const maxPages = Number(getEnv("DMM_MAX_PAGES", "5"));
+  const maxPages = options.maxPages ?? Number(getEnv("DMM_MAX_PAGES", "5"));
   const nowPrintingPattern = /now[_-]?printing/i;
   const fetchedAt = new Date().toISOString();
   const skipVr = getEnv("DMM_SKIP_VR", "true") !== "false";
@@ -48,7 +50,7 @@ export async function fetchFanzaWorks(options: FetchFanzaOptions = {}): Promise<
   const embedSize = getEnv("DMM_EMBED_SIZE", "1280_720");
 
   const results: RawFanzaWork[] = [];
-  let offset = 1;
+  let offset = Math.max(1, options.offsetStart ?? 1);
   const skipSlugs = options.skipSlugs ?? new Set<string>();
 
   for (let page = 0; page < maxPages && results.length < targetNew; page += 1) {

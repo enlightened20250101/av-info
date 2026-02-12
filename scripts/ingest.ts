@@ -180,10 +180,21 @@ async function buildTopicLinks(text: string) {
   return { relatedWorks, relatedActresses, tags };
 }
 
-async function ingestFanzaWorks() {
-  const targetNew = Number(process.env.DMM_HITS_PER_RUN ?? "3");
+type FanzaIngestOptions = {
+  targetNew?: number;
+  offsetStart?: number;
+  maxPages?: number;
+};
+
+async function ingestFanzaWorks(options: FanzaIngestOptions = {}) {
+  const targetNew = options.targetNew ?? Number(process.env.DMM_HITS_PER_RUN ?? "3");
   const skipSlugs = await getWorkSlugs(5000);
-  const raws = await fetchFanzaWorks({ skipSlugs, targetNew });
+  const raws = await fetchFanzaWorks({
+    skipSlugs,
+    targetNew,
+    offsetStart: options.offsetStart,
+    maxPages: options.maxPages,
+  });
   const total = raws.length;
 
   let upserted = 0;
@@ -392,9 +403,68 @@ async function sendNotification(message: string) {
   }
 }
 
+function parseMode() {
+  const modeArg = process.argv.find((arg) => arg.startsWith("--mode="));
+  if (modeArg) {
+    return modeArg.split("=")[1]?.trim() || "";
+  }
+  if (process.argv.includes("--archive")) return "archive";
+  return "";
+}
+
 async function run() {
   const startedAt = new Date();
   logLine("Ingest started");
+
+  const mode = parseMode();
+  const archiveMode = mode === "archive";
+  if (archiveMode) {
+    const offsetStart = Number(process.env.DMM_ARCHIVE_OFFSET_START ?? "1");
+    const maxPages = Number(process.env.DMM_ARCHIVE_PAGES ?? "5");
+    const targetNew = Number(process.env.DMM_ARCHIVE_TARGET ?? process.env.DMM_HITS_PER_RUN ?? "3");
+    logLine(`Archive mode: offset=${offsetStart} pages=${maxPages} target=${targetNew}`);
+    const tasks = [
+      {
+        name: "fanza",
+        run: () => ingestFanzaWorks({ offsetStart, maxPages, targetNew }),
+      },
+    ];
+    const results = await Promise.allSettled(tasks.map((task) => task.run()));
+    let successCount = 0;
+    const reportLines: string[] = [];
+
+    results.forEach((result, index) => {
+      const name = tasks[index].name;
+      if (result.status === "fulfilled") {
+        successCount += 1;
+        logLine(`${name} completed: ${JSON.stringify(result.value)}`);
+        reportLines.push(`${name}: ok ${JSON.stringify(result.value)}`);
+      } else {
+        logLine(`${name} failed: ${String(result.reason)}`);
+        reportLines.push(`${name}: failed ${String(result.reason)}`);
+      }
+    });
+
+    if (successCount === 0) {
+      const message = "Ingest finished: no successful fetchers";
+      const durationMs = Date.now() - startedAt.getTime();
+      const summary = `Duration: ${Math.round(durationMs / 1000)}s | Success: ${successCount}/${tasks.length}`;
+      logLine(message);
+      await sendNotification(`${message}\n${summary}\n${reportLines.join("\n")}`);
+      process.exit(1);
+    }
+
+    if (successCount < tasks.length) {
+      const durationMs = Date.now() - startedAt.getTime();
+      const summary = `Duration: ${Math.round(durationMs / 1000)}s | Success: ${successCount}/${tasks.length}`;
+      await sendNotification(`Ingest finished with partial failures\n${summary}\n${reportLines.join("\n")}`);
+      logLine("Ingest finished: partial success");
+      return;
+    }
+
+    logLine("Ingest finished: success");
+    return;
+  }
 
   const tasks = [
     { name: "gsheet", run: ingestGsheetEmbeds },
