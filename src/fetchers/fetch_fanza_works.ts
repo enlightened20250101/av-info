@@ -40,7 +40,7 @@ export async function fetchFanzaWorks(options: FetchFanzaOptions = {}): Promise<
   const fetchedAt = new Date().toISOString();
   const skipVr = getEnv("DMM_SKIP_VR", "true") !== "false";
   const validateEmbed = getEnv("DMM_EMBED_VALIDATE", "true") === "true";
-  const validateThumb = getEnv("DMM_VALIDATE_THUMBNAIL", "false") === "true";
+  const validateThumb = getEnv("DMM_VALIDATE_THUMBNAIL", "true") === "true";
   const embedAffiliateId =
     getEnv("DMM_EMBED_AFFILIATE_ID", "") ||
     getEnv("DMM_LINK_AFFILIATE_ID", "") ||
