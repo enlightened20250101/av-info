@@ -419,7 +419,9 @@ export async function getActressCovers(actresses: string[]) {
     .select("actress,cover_url")
     .in("actress", actresses);
   if (error) throw error;
-  return new Map((data ?? []).map((row) => [row.actress, row.cover_url ?? null]));
+  return new Map(
+    ((data ?? []) as ActressCoverStat[]).map((row) => [row.actress, row.cover_url ?? null])
+  );
 }
 
 export async function refreshActressStats() {
