@@ -409,7 +409,7 @@ export default async function WorkPage({ params }: { params: Promise<{ code: str
                   )}
                   <div className="p-4">
                     <p className="text-xs text-muted">{work.slug}</p>
-                    <p className="mt-1 text-sm font-semibold">{work.title}</p>
+                    <p className="mt-1 text-sm font-semibold line-clamp-2">{work.title}</p>
                   </div>
                 </Link>
               ))}
@@ -442,7 +442,7 @@ export default async function WorkPage({ params }: { params: Promise<{ code: str
                   )}
                   <div className="p-4">
                     <p className="text-xs text-muted">{work.slug}</p>
-                    <p className="mt-1 text-sm font-semibold">{work.title}</p>
+                    <p className="mt-1 text-sm font-semibold line-clamp-2">{work.title}</p>
                   </div>
                 </Link>
               ))}
@@ -475,7 +475,7 @@ export default async function WorkPage({ params }: { params: Promise<{ code: str
                   )}
                   <div className="p-4">
                     <p className="text-xs text-muted">{work.slug}</p>
-                    <p className="mt-1 text-sm font-semibold">{work.title}</p>
+                    <p className="mt-1 text-sm font-semibold line-clamp-2">{work.title}</p>
                   </div>
                 </Link>
               ))}
@@ -537,7 +537,7 @@ export default async function WorkPage({ params }: { params: Promise<{ code: str
                   )}
                   <div className="p-4">
                     <p className="text-xs text-muted">{work.slug}</p>
-                    <p className="mt-1 text-sm font-semibold">{work.title}</p>
+                    <p className="mt-1 text-sm font-semibold line-clamp-2">{work.title}</p>
                   </div>
                 </Link>
               ))}
