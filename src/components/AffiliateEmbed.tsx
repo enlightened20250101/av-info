@@ -45,11 +45,15 @@ export function AffiliateEmbed({
   fallbackUrl,
   fallbackImage,
   fallbackAlt,
+  fallbackLabel,
+  forceFallback,
 }: {
   embedHtml?: string | null;
   fallbackUrl?: string | null;
   fallbackImage?: string | null;
   fallbackAlt?: string | null;
+  fallbackLabel?: string | null;
+  forceFallback?: boolean;
 }) {
   const embed = useMemo(() => parseEmbed(embedHtml ?? ""), [embedHtml]);
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -89,7 +93,16 @@ export function AffiliateEmbed({
 
   if (!embed) return null;
 
-  const showFallback = embed.kind === "iframe" && iframeFailed && fallbackUrl && fallbackImage;
+  const showFallback =
+    embed.kind === "iframe" &&
+    (forceFallback || iframeFailed) &&
+    !!fallbackUrl &&
+    !!fallbackImage;
+  const showFallbackButton =
+    embed.kind === "iframe" &&
+    (forceFallback || iframeFailed) &&
+    !!fallbackUrl &&
+    !fallbackImage;
 
   return (
     <div className="mt-4">
@@ -109,6 +122,15 @@ export function AffiliateEmbed({
             loading="lazy"
             decoding="async"
           />
+        </a>
+      ) : showFallbackButton ? (
+        <a
+          href={fallbackUrl ?? "#"}
+          rel="sponsored noopener noreferrer"
+          target="_blank"
+          className="flex w-full items-center justify-center rounded-2xl border border-border bg-white px-4 py-6 text-sm font-semibold text-foreground"
+        >
+          {fallbackLabel ?? "FANZAで見る"}
         </a>
       ) : (
         <div

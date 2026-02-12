@@ -212,6 +212,8 @@ export default async function WorkPage({ params }: { params: Promise<{ code: str
             fallbackUrl={article.affiliate_url}
             fallbackImage={article.images[0]?.url}
             fallbackAlt={article.title}
+            fallbackLabel="FANZAで見る"
+            forceFallback={article.images.length === 0}
           />
         ) : null}
 

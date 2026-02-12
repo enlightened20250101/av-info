@@ -130,6 +130,7 @@ export async function fetchFanzaWorks(options: FetchFanzaOptions = {}): Promise<
     if (normalizedContentId) {
       const base = `https://awsimgsrc.dmm.co.jp/pics_dig/digital/video/${normalizedContentId}/${normalizedContentId}`;
       inferred.push(`${base}pl.jpg`);
+      inferred.push(`https://pics.dmm.co.jp/digital/video/${normalizedContentId}/${normalizedContentId}pl.jpg`);
       const hasJp = apiImages.some((url) => /jp-\d+\.jpg/i.test(url));
       if (hasJp) {
         for (let idx = 1; idx <= 9; idx += 1) {
