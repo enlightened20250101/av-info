@@ -40,6 +40,7 @@ export async function fetchFanzaWorks(options: FetchFanzaOptions = {}): Promise<
   const fetchedAt = new Date().toISOString();
   const skipVr = getEnv("DMM_SKIP_VR", "true") !== "false";
   const validateEmbed = getEnv("DMM_EMBED_VALIDATE", "false") === "true";
+  const validateThumb = getEnv("DMM_VALIDATE_THUMBNAIL", "false") === "true";
   const embedAffiliateId =
     getEnv("DMM_EMBED_AFFILIATE_ID", "") ||
     getEnv("DMM_LINK_AFFILIATE_ID", "") ||
@@ -158,6 +159,34 @@ export async function fetchFanzaWorks(options: FetchFanzaOptions = {}): Promise<
     ) as string[];
     if (uniqueImages.length === 0) {
       continue;
+    }
+    if (validateThumb) {
+      const primary = inferred[0] ?? uniqueImages[0];
+      const secondary = inferred[1];
+      let hasThumb = false;
+      const tryUrls = [primary, secondary].filter(Boolean) as string[];
+      for (const thumbUrl of tryUrls) {
+        try {
+          const res = await fetchWithRetry(
+            thumbUrl,
+            { headers: { "User-Agent": "av-info-mvp/1.0" }, cache: "no-store" },
+            {
+              retries: Number(getEnv("FETCH_RETRIES", "2")),
+              timeoutMs: Number(getEnv("FETCH_TIMEOUT_MS", "8000")),
+              backoffMs: Number(getEnv("FETCH_BACKOFF_MS", "800")),
+            }
+          );
+          if (res.ok) {
+            hasThumb = true;
+            break;
+          }
+        } catch {
+          // ignore
+        }
+      }
+      if (!hasThumb) {
+        continue;
+      }
     }
     const images = uniqueImages.slice(0, 5).map((url: string, idx: number) => ({
       url,
