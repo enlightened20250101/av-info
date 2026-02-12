@@ -131,7 +131,7 @@ export default async function Home({
           <div className="luxe-glow pointer-events-none absolute -left-12 -top-16 h-48 w-48 rounded-full bg-accent/22 blur-[90px]" />
           <div className="luxe-glow pointer-events-none absolute -right-10 -bottom-10 h-40 w-40 rounded-full bg-foreground/10 blur-[80px]" />
           <div className="flex items-center justify-between">
-            <p className="text-xs uppercase tracking-[0.3em] text-muted">Auto Updates</p>
+            <p className="text-xs uppercase tracking-[0.3em] text-muted">最新作品随時更新中!</p>
             <div className="rounded-full bg-accent-soft px-3 py-1 text-[11px] font-semibold text-accent">
               Daily
             </div>

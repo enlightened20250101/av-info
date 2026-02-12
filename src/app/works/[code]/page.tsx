@@ -96,6 +96,7 @@ export default async function WorkPage({ params }: { params: Promise<{ code: str
         (work) => work.slug !== article.slug
       )
     : [];
+  const fallbackCover = article.images?.[0]?.url ?? null;
   const baseTags = extractTags(`${article.title} ${article.summary}`);
   const metaTags = extractMetaTagsFromBody(article.body);
   const tags = [...baseTags, ...metaTags];
@@ -349,9 +350,9 @@ export default async function WorkPage({ params }: { params: Promise<{ code: str
             <h2 className="text-lg font-semibold">関連女優</h2>
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
               {article.related_actresses.map((slug) => {
-                const cover = related.find((work) =>
-                  work.related_actresses.includes(slug)
-                )?.images?.[0]?.url;
+                const cover =
+                  related.find((work) => work.related_actresses.includes(slug))?.images?.[0]
+                    ?.url ?? fallbackCover;
                 return (
                   <Link
                     key={slug}
