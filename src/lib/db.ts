@@ -235,6 +235,19 @@ export async function getLatestByTypePage(
   };
 }
 
+export async function getWorksByGenre(genre: string, limit = 12) {
+  const client = getSupabase();
+  const { data, error } = await client
+    .from("articles")
+    .select("*")
+    .eq("type", "work")
+    .contains("meta_genres", [genre])
+    .order("published_at", { ascending: false })
+    .limit(limit);
+  if (error) throw error;
+  return (data ?? []).map((row) => normalizeArticle(row as Article));
+}
+
 type SearchOrder = "newest" | "oldest" | "title";
 
 export async function searchArticlesPage(options: {

@@ -3,12 +3,24 @@ import { Metadata } from "next";
 import { Suspense } from "react";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import { AffiliateEmbed } from "@/components/AffiliateEmbed";
-import { extractMetaTagsFromBody, extractTags, tagKeywords, tagLabel } from "@/lib/tagging";
-import { findWorksByActressSlug, getArticleBySlug, getLatestByType } from "@/lib/db";
+import { extractTags, tagKeywords, tagLabel } from "@/lib/tagging";
+import {
+  findWorksByActressSlug,
+  getArticleBySlug,
+  getLatestByTypePage,
+  getWorksByGenre,
+} from "@/lib/db";
 import { SITE } from "@/lib/site";
 import { Article } from "@/lib/schema";
 
 export const dynamic = "force-dynamic";
+
+function buildMetaTagsFromWork(work: Article) {
+  const tags: string[] = [];
+  (work.meta_genres ?? []).forEach((genre) => tags.push(`genre:${genre}`));
+  (work.meta_makers ?? []).forEach((maker) => tags.push(`maker:${maker}`));
+  return tags;
+}
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleString("ja-JP", {
@@ -94,7 +106,7 @@ export default async function WorkPage({ params }: { params: Promise<{ code: str
 
   const leadActress = article.related_actresses[0];
   const baseTags = extractTags(`${article.title} ${article.summary}`);
-  const metaTags = extractMetaTagsFromBody(article.body);
+  const metaTags = buildMetaTagsFromWork(article);
   const tags = [...baseTags, ...metaTags];
   const keywordPool = tags.flatMap(tagKeywords);
   const base = SITE.url.replace(/\/$/, "");
@@ -317,7 +329,6 @@ export default async function WorkPage({ params }: { params: Promise<{ code: str
           <RelatedSections
             article={article}
             baseTags={baseTags}
-            metaTags={metaTags}
             leadActress={leadActress}
           />
         </Suspense>
@@ -421,12 +432,10 @@ function RelatedSectionsSkeleton() {
 async function RelatedSections({
   article,
   baseTags,
-  metaTags,
   leadActress,
 }: {
   article: Article;
   baseTags: string[];
-  metaTags: string[];
   leadActress?: string;
 }) {
   const base = SITE.url.replace(/\/$/, "");
@@ -436,26 +445,20 @@ async function RelatedSections({
       )
     : [];
   const fallbackCover = article.images?.[0]?.url ?? null;
-  const latestTopics = await getLatestByType("topic", 40);
+  const latestTopics = (await getLatestByTypePage("topic", 1, 40)).items;
   const relatedTopics = latestTopics
     .filter((topic) => {
       const topicTags = extractTags(`${topic.title} ${topic.summary}`);
       return topicTags.some((tag) => baseTags.includes(tag));
     })
     .slice(0, 4);
-  const recentWorks = (await getLatestByType("work", 120))
-    .filter((work) => work.slug !== article.slug)
-    .slice(0, 12);
-  const sameGenre = metaTags.find((tag) => tag.startsWith("genre:"));
+  const latestWorks = (await getLatestByTypePage("work", 1, 120)).items;
+  const recentWorks = latestWorks.filter((work) => work.slug !== article.slug).slice(0, 12);
+  const sameGenre = article.meta_genres?.[0] ?? null;
   const sameGenreWorks = sameGenre
-    ? (await getLatestByType("work", 160))
-        .filter(
-          (work) =>
-            work.slug !== article.slug && work.body.includes(sameGenre.replace("genre:", ""))
-        )
-        .slice(0, 6)
+    ? (await getWorksByGenre(sameGenre, 12)).filter((work) => work.slug !== article.slug).slice(0, 6)
     : [];
-  const fallbackWorks = (await getLatestByType("work", 80))
+  const fallbackWorks = latestWorks
     .filter(
       (work) =>
         work.slug !== article.slug &&
