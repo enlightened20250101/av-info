@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { Space_Grotesk, IBM_Plex_Mono } from "next/font/google";
 import { SITE } from "@/lib/site";
 import MobileNav from "@/components/MobileNav";
@@ -59,7 +60,9 @@ export default function RootLayout({
   return (
     <html lang="ja">
       <body className={`${spaceGrotesk.variable} ${plexMono.variable} antialiased`}>
-        <RouteProgress />
+        <Suspense fallback={null}>
+          <RouteProgress />
+        </Suspense>
         <MobileNav />
         {children}
         <Footer />
