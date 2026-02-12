@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 type EmbedInfo = {
   kind: "mgs" | "iframe";
@@ -40,9 +40,20 @@ function parseEmbed(html: string): EmbedInfo | null {
   return parseMgsEmbed(html) ?? parseIframeEmbed(html);
 }
 
-export function AffiliateEmbed({ embedHtml }: { embedHtml?: string | null }) {
+export function AffiliateEmbed({
+  embedHtml,
+  fallbackUrl,
+  fallbackImage,
+  fallbackAlt,
+}: {
+  embedHtml?: string | null;
+  fallbackUrl?: string | null;
+  fallbackImage?: string | null;
+  fallbackAlt?: string | null;
+}) {
   const embed = useMemo(() => parseEmbed(embedHtml ?? ""), [embedHtml]);
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const [iframeFailed, setIframeFailed] = useState(false);
 
   useEffect(() => {
     if (!embed || embed.kind !== "mgs") return;
@@ -78,6 +89,8 @@ export function AffiliateEmbed({ embedHtml }: { embedHtml?: string | null }) {
 
   if (!embed) return null;
 
+  const showFallback = embed.kind === "iframe" && iframeFailed && fallbackUrl && fallbackImage;
+
   return (
     <div className="mt-4">
       <style jsx global>{`
@@ -87,21 +100,41 @@ export function AffiliateEmbed({ embedHtml }: { embedHtml?: string | null }) {
           height: 100% !important;
         }
       `}</style>
-      <div className="mgs-embed aspect-video w-full overflow-hidden rounded-2xl bg-black">
-        {embed.kind === "iframe" ? (
-          <iframe
-            className="h-full w-full"
-            src={embed.iframeSrc}
-            scrolling="no"
-            frameBorder={0}
-            allowFullScreen
+      {showFallback ? (
+        <a href={fallbackUrl ?? "#"} rel="sponsored noopener noreferrer" target="_blank">
+          <img
+            src={fallbackImage ?? ""}
+            alt={fallbackAlt ?? "FANZA動画"}
+            className="w-full rounded-2xl"
+            loading="lazy"
+            decoding="async"
           />
-        ) : (
-          <div ref={containerRef} className="h-full w-full">
-            <div className={embed.className || undefined} />
-          </div>
-        )}
-      </div>
+        </a>
+      ) : (
+        <div
+          className={
+            embed.kind === "iframe"
+              ? "mgs-embed aspect-[4/3] w-full rounded-2xl bg-black"
+              : "mgs-embed aspect-video w-full overflow-hidden rounded-2xl bg-black"
+          }
+        >
+          {embed.kind === "iframe" ? (
+            <iframe
+              className="h-full w-full"
+              src={embed.iframeSrc}
+              scrolling="no"
+              frameBorder={0}
+              allowFullScreen
+              onError={() => setIframeFailed(true)}
+              onLoad={() => setIframeFailed(false)}
+            />
+          ) : (
+            <div ref={containerRef} className="h-full w-full">
+              <div className={embed.className || undefined} />
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

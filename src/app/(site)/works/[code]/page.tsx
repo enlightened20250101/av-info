@@ -206,7 +206,14 @@ export default async function WorkPage({ params }: { params: Promise<{ code: str
           </h1>
           <p className="mt-2 text-sm text-muted">{formatDate(article.published_at)}</p>
         </header>
-        {article.embed_html ? <AffiliateEmbed embedHtml={article.embed_html} /> : null}
+        {article.embed_html ? (
+          <AffiliateEmbed
+            embedHtml={article.embed_html}
+            fallbackUrl={article.affiliate_url}
+            fallbackImage={article.images[0]?.url}
+            fallbackAlt={article.title}
+          />
+        ) : null}
 
         <section className="grid gap-6 md:grid-cols-[1.2fr_1fr]">
           <div className="rounded-3xl border border-border bg-white p-6">
