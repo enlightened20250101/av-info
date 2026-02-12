@@ -5,8 +5,8 @@ import {
   getActressRanking,
   getLatestArticles,
   getLatestByType,
-  getPopularTagsFromTopics,
   getTopGenres,
+  getTopTags,
 } from "@/lib/db";
 import { buildPagination } from "@/lib/pagination";
 import { Article } from "@/lib/schema";
@@ -29,20 +29,6 @@ function formatDate(iso: string) {
     dateStyle: "medium",
     timeStyle: "short",
   });
-}
-
-function buildPopularTags(texts: string[], limit = 8) {
-  const counts = new Map<string, number>();
-  texts.forEach((text) => {
-    extractTags(text).forEach((tag) => {
-      counts.set(tag, (counts.get(tag) ?? 0) + 1);
-    });
-  });
-
-  return Array.from(counts.entries())
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, limit)
-    .map(([tag]) => tag);
 }
 
  
@@ -74,11 +60,7 @@ export default async function Home({
       !topic.source_url.startsWith("internal:summary:")
   );
 
-  const popularTags = buildPopularTags(
-    (await getPopularTagsFromTopics(12)).map(
-      (topic) => `${topic.title ?? ""} ${topic.summary ?? ""}`
-    )
-  );
+  const popularTags = (await getTopTags(12)).map((row) => row.tag);
   const topGenres = await getTopGenres(8);
   const popularGenres = topGenres.map((row) => `genre:${row.genre}`);
   const topActresses = await getActressRanking(8);
