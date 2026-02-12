@@ -100,6 +100,7 @@ export default async function WorkPage({ params }: { params: Promise<{ code: str
   const metaTags = extractMetaTagsFromBody(article.body);
   const tags = [...baseTags, ...metaTags];
   const keywordPool = tags.flatMap(tagKeywords);
+  const base = SITE.url.replace(/\/$/, "");
   const latestTopics = await getLatestByType("topic", 40);
   const relatedTopics = latestTopics
     .filter((topic) => {
@@ -158,7 +159,6 @@ export default async function WorkPage({ params }: { params: Promise<{ code: str
       name: SITE.name,
     },
   };
-  const base = SITE.url.replace(/\/$/, "");
   const keywords = Array.from(new Set(tags)).slice(0, 12);
   const faqLd = {
     "@context": "https://schema.org",
