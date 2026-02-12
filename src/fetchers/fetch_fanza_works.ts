@@ -108,29 +108,33 @@ export async function fetchFanzaWorks(options: FetchFanzaOptions = {}): Promise<
       continue;
     }
 
-    const imageCandidates: string[] = [];
-    const addImage = (value: unknown) => {
+    const apiLarge: string[] = [];
+    const apiSample: string[] = [];
+    const apiOther: string[] = [];
+    const addImage = (target: string[], value: unknown) => {
       if (!value) return;
       if (typeof value === "string") {
-        imageCandidates.push(value);
+        target.push(value);
         return;
       }
       if (Array.isArray(value)) {
-        value.forEach((entry) => addImage(entry));
+        value.forEach((entry) => addImage(target, entry));
         return;
       }
       if (typeof value === "object") {
-        Object.values(value as Record<string, unknown>).forEach((entry) => addImage(entry));
+        Object.values(value as Record<string, unknown>).forEach((entry) =>
+          addImage(target, entry)
+        );
       }
     };
 
-    addImage(item?.imageURL?.large);
-    addImage(item?.imageURL?.list);
-    addImage(item?.imageURL?.small);
-    addImage(item?.imageURL?.sample);
-    addImage(item?.sampleImageURL);
+    addImage(apiLarge, item?.imageURL?.large);
+    addImage(apiOther, item?.imageURL?.list);
+    addImage(apiOther, item?.imageURL?.small);
+    addImage(apiSample, item?.imageURL?.sample);
+    addImage(apiSample, item?.sampleImageURL);
 
-    const apiImages = imageCandidates.filter(Boolean) as string[];
+    const apiImages = [...apiLarge, ...apiSample, ...apiOther].filter(Boolean) as string[];
     const hasRealImage = apiImages.some((url) => !nowPrintingPattern.test(url));
     if (apiImages.length > 0 && !hasRealImage) {
       continue;
@@ -154,8 +158,16 @@ export async function fetchFanzaWorks(options: FetchFanzaOptions = {}): Promise<
       }
     }
 
-    const uniqueImages = Array.from(new Set([...inferred, ...apiImages])).filter(
-      (url) => !nowPrintingPattern.test(String(url))
+    const primary =
+      inferred[0] ||
+      apiLarge[0] ||
+      apiSample[0] ||
+      apiOther[0] ||
+      apiImages[0] ||
+      "";
+    const extraSources = inferred.slice(1);
+    const uniqueImages = Array.from(new Set([primary, ...extraSources])).filter(
+      (url) => url && !nowPrintingPattern.test(String(url))
     ) as string[];
     if (uniqueImages.length === 0) {
       continue;
