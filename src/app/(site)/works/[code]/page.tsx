@@ -215,6 +215,16 @@ export default async function WorkPage({ params }: { params: Promise<{ code: str
             fallbackLabel="FANZAで見る"
             forceFallback={article.images.length === 0}
           />
+        ) : article.affiliate_url && article.images[0]?.url ? (
+          <a href={article.affiliate_url} rel="sponsored noopener noreferrer" target="_blank">
+            <img
+              src={article.images[0].url}
+              alt={article.title}
+              className="mt-4 w-full rounded-2xl"
+              loading="lazy"
+              decoding="async"
+            />
+          </a>
         ) : null}
 
         <section className="grid gap-6 md:grid-cols-[1.2fr_1fr]">

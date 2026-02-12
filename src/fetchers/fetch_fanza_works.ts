@@ -9,6 +9,14 @@ type FetchFanzaOptions = {
   targetNew?: number;
 };
 
+function buildLitevideoEmbedHtml(contentId: string, affiliateId: string, size: string) {
+  if (!contentId || !affiliateId) return "";
+  const normalizedId = contentId.trim().toLowerCase();
+  if (!normalizedId) return "";
+  const src = `https://www.dmm.co.jp/litevideo/-/part/=/affi_id=${affiliateId}/cid=${normalizedId}/size=${size}/`;
+  return `<div style="width:100%; padding-top: 75%; position:relative;"><iframe width="100%" height="100%" max-width="1280px" style="position: absolute; top: 0; left: 0;" src="${src}" scrolling="no" frameborder="0" allowfullscreen></iframe></div>`;
+}
+
 export async function fetchFanzaWorks(options: FetchFanzaOptions = {}): Promise<RawFanzaWork[]> {
   const apiId = getEnv("DMM_API_ID", "");
   const affiliateId = getEnv("DMM_AFFILIATE_ID", "");
@@ -31,6 +39,12 @@ export async function fetchFanzaWorks(options: FetchFanzaOptions = {}): Promise<
   const nowPrintingPattern = /now[_-]?printing/i;
   const fetchedAt = new Date().toISOString();
   const skipVr = getEnv("DMM_SKIP_VR", "true") !== "false";
+  const validateEmbed = getEnv("DMM_EMBED_VALIDATE", "false") === "true";
+  const embedAffiliateId =
+    getEnv("DMM_EMBED_AFFILIATE_ID", "") ||
+    getEnv("DMM_LINK_AFFILIATE_ID", "") ||
+    affiliateId;
+  const embedSize = getEnv("DMM_EMBED_SIZE", "1280_720");
 
   const results: RawFanzaWork[] = [];
   let offset = 1;
@@ -152,6 +166,33 @@ export async function fetchFanzaWorks(options: FetchFanzaOptions = {}): Promise<
 
     const canonicalUrl = item?.URL || item?.URLS?.affiliate || item?.URLS?.pc;
     const affiliateUrl = item?.URLS?.affiliate ?? null;
+    let embedHtml: string | null = null;
+    if (embedAffiliateId && contentId) {
+      embedHtml = buildLitevideoEmbedHtml(String(contentId), embedAffiliateId, embedSize) || null;
+    }
+    if (embedHtml && validateEmbed) {
+      try {
+        const embedUrlMatch = embedHtml.match(/src="([^"]+)"/i);
+        const embedUrl = embedUrlMatch?.[1];
+        if (embedUrl) {
+          const embedResponse = await fetchWithRetry(
+            embedUrl,
+            { headers: { "User-Agent": "av-info-mvp/1.0" }, cache: "no-store" },
+            {
+              retries: Number(getEnv("FETCH_RETRIES", "2")),
+              timeoutMs: Number(getEnv("FETCH_TIMEOUT_MS", "8000")),
+              backoffMs: Number(getEnv("FETCH_BACKOFF_MS", "800")),
+            }
+          );
+          const html = await embedResponse.text();
+          if (!embedResponse.ok || /404 Not Found/i.test(html) || /指定されたページが見つかりません/i.test(html)) {
+            embedHtml = "";
+          }
+        }
+      } catch {
+        // Ignore embed validation failure.
+      }
+    }
 
     results.push({
       content_id: String(contentId),
@@ -165,6 +206,7 @@ export async function fetchFanzaWorks(options: FetchFanzaOptions = {}): Promise<
       images,
       canonical_url: String(canonicalUrl),
       affiliate_url: affiliateUrl,
+      embed_html: embedHtml,
       fetched_at: fetchedAt,
     } satisfies RawFanzaWork);
 
