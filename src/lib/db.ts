@@ -141,10 +141,10 @@ function isUniqueViolation(error?: PostgrestError | null) {
 export async function upsertArticle(article: Article) {
   const client = getSupabase();
 
-  const payload = article as Database["public"]["Tables"]["articles"]["Insert"];
+  const payload = article as Database["public"]["Tables"]["articles"]["Insert"] & Record<string, unknown>;
   const { error } = await client
     .from("articles")
-    .upsert(payload, { onConflict: "slug" });
+    .upsert(payload as never, { onConflict: "slug" });
 
   if (!error) {
     return { status: "upserted" as const, conflict: null as string | null };
@@ -153,7 +153,7 @@ export async function upsertArticle(article: Article) {
   if (isUniqueViolation(error)) {
     const { error: updateError } = await client
       .from("articles")
-      .update(payload)
+      .update(payload as never)
       .eq("source_url", article.source_url);
 
     if (!updateError) {
