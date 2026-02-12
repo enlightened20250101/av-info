@@ -295,7 +295,6 @@ export default async function WorkPage({ params }: { params: Promise<{ code: str
         </section>
 
         <Suspense fallback={<RelatedSectionsSkeleton />}>
-          {/* @ts-expect-error Server Component */}
           <RelatedSections
             article={article}
             baseTags={baseTags}
