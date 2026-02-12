@@ -146,10 +146,13 @@ export async function fetchFanzaWorks(options: FetchFanzaOptions = {}): Promise<
     }
 
     const inferred: string[] = [];
+    const fallbackThumbs: string[] = [];
     if (normalizedContentId) {
       const base = `https://awsimgsrc.dmm.co.jp/pics_dig/digital/video/${normalizedContentId}/${normalizedContentId}`;
       inferred.push(`${base}pl.jpg`);
-      inferred.push(`https://pics.dmm.co.jp/digital/video/${normalizedContentId}/${normalizedContentId}pl.jpg`);
+      fallbackThumbs.push(
+        `https://pics.dmm.co.jp/digital/video/${normalizedContentId}/${normalizedContentId}pl.jpg`
+      );
       const hasJp = apiImages.some((url) => /jp-\d+\.jpg/i.test(url));
       if (hasJp) {
         for (let idx = 1; idx <= 9; idx += 1) {
@@ -158,7 +161,7 @@ export async function fetchFanzaWorks(options: FetchFanzaOptions = {}): Promise<
       }
     }
 
-    const primary =
+    let primary =
       inferred[0] ||
       apiLarge[0] ||
       apiSample[0] ||
@@ -173,10 +176,11 @@ export async function fetchFanzaWorks(options: FetchFanzaOptions = {}): Promise<
       continue;
     }
     if (validateThumb) {
-      const primary = inferred[0] ?? uniqueImages[0];
-      const secondary = inferred[1];
+      const primaryCandidate = inferred[0] ?? uniqueImages[0];
+      const secondary = fallbackThumbs[0];
       let hasThumb = false;
-      const tryUrls = [primary, secondary].filter(Boolean) as string[];
+      let selectedThumb = "";
+      const tryUrls = [primaryCandidate, secondary].filter(Boolean) as string[];
       for (const thumbUrl of tryUrls) {
         try {
           const res = await fetchWithRetry(
@@ -188,8 +192,11 @@ export async function fetchFanzaWorks(options: FetchFanzaOptions = {}): Promise<
               backoffMs: Number(getEnv("FETCH_BACKOFF_MS", "800")),
             }
           );
-          if (res.ok) {
+          const resolvedUrl = res.url || thumbUrl;
+          const isNowPrinting = nowPrintingPattern.test(resolvedUrl);
+          if (res.ok && !isNowPrinting) {
             hasThumb = true;
+            selectedThumb = thumbUrl;
             break;
           }
         } catch {
@@ -198,6 +205,9 @@ export async function fetchFanzaWorks(options: FetchFanzaOptions = {}): Promise<
       }
       if (!hasThumb) {
         continue;
+      }
+      if (selectedThumb) {
+        primary = selectedThumb;
       }
     }
     const images = uniqueImages.slice(0, 5).map((url: string, idx: number) => ({
