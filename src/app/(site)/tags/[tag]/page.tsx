@@ -97,6 +97,7 @@ export default async function TagPage({ params }: { params: Promise<{ tag: strin
       text.includes(keyword)
     );
   });
+  const matchedLimited = matched.slice(0, 12);
 
   const popularWorks = works.filter((work) => {
     const text = `${work.title} ${work.summary}`;
@@ -277,7 +278,7 @@ export default async function TagPage({ params }: { params: Promise<{ tag: strin
                   )}
                   <div className="p-4">
                     <p className="text-xs text-muted">{work.slug}</p>
-                    <p className="mt-1 text-sm font-semibold">{work.title}</p>
+                    <p className="mt-1 text-sm font-semibold line-clamp-2">{work.title}</p>
                     <p className="mt-1 text-xs text-muted line-clamp-2">{work.summary}</p>
                   </div>
                 </Link>
@@ -368,7 +369,7 @@ export default async function TagPage({ params }: { params: Promise<{ tag: strin
                   </div>
                   <div className="p-4">
                     <p className="text-xs text-muted">{topic.slug}</p>
-                    <p className="mt-1 text-sm font-semibold">{topic.title}</p>
+                    <p className="mt-1 text-sm font-semibold line-clamp-2">{topic.title}</p>
                     <p className="mt-1 text-xs text-muted line-clamp-2">{topic.summary}</p>
                   </div>
                 </Link>
@@ -382,7 +383,7 @@ export default async function TagPage({ params }: { params: Promise<{ tag: strin
             <p className="text-sm text-muted">まだ記事がありません。</p>
           ) : (
             <div className="grid gap-3 sm:grid-cols-2">
-              {matched.map((article) => (
+              {matchedLimited.map((article) => (
                 <Link
                   key={article.id}
                   href={`/${article.type === "work" ? "works" : article.type === "actress" ? "actresses" : "topics"}/${article.slug}`}
@@ -410,13 +411,23 @@ export default async function TagPage({ params }: { params: Promise<{ tag: strin
                       </span>
                       <span className="text-xs text-muted">{article.slug}</span>
                     </div>
-                    <p className="mt-2 text-sm font-semibold">{article.title}</p>
+                    <p className="mt-2 text-sm font-semibold line-clamp-2">{article.title}</p>
                     <p className="mt-1 text-xs text-muted line-clamp-2">{article.summary}</p>
                   </div>
                 </Link>
               ))}
             </div>
           )}
+          {matched.length > matchedLimited.length ? (
+            <div className="mt-4 text-right">
+              <Link
+                href={`/search?q=%23${encodeURIComponent(normalizedTag)}`}
+                className="text-xs font-semibold text-accent"
+              >
+                もっと見る →
+              </Link>
+            </div>
+          ) : null}
         </section>
 
         {recentTagArticles.length > 0 ? (
@@ -434,7 +445,7 @@ export default async function TagPage({ params }: { params: Promise<{ tag: strin
                 >
                   <div className="p-4">
                     <p className="text-xs text-muted">{article.type}</p>
-                    <p className="mt-1 text-sm font-semibold">{article.title}</p>
+                    <p className="mt-1 text-sm font-semibold line-clamp-2">{article.title}</p>
                     <p className="mt-1 text-xs text-muted line-clamp-2">{article.summary}</p>
                   </div>
                 </Link>
