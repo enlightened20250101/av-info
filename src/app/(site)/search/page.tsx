@@ -1,9 +1,13 @@
 import Link from "next/link";
 import { Metadata } from "next";
 import Breadcrumbs from "@/components/Breadcrumbs";
-import { extractTags, tagLabel } from "@/lib/tagging";
+import { extractTags, normalizeTag, tagLabel } from "@/lib/tagging";
 import { buildPagination } from "@/lib/pagination";
-import { getLatestArticles, searchArticlesPage } from "@/lib/db";
+import {
+  getLatestArticles,
+  getWorksByMetaTagPage,
+  searchArticlesPage,
+} from "@/lib/db";
 import SearchHistoryClient from "@/app/(site)/search/SearchHistoryClient";
 import { Article } from "@/lib/schema";
 import { SITE } from "@/lib/site";
@@ -98,13 +102,23 @@ export default async function SearchPage({
   }>;
 }) {
   const sp = await searchParams;
-  const query = normalizeQuery(sp.q ?? "");
+  const rawQuery = (sp.q ?? "").trim();
+  const query = normalizeQuery(rawQuery);
   const mode = sp.type ?? "all";
   const order = sp.order ?? "newest";
   const page = Math.max(1, Number(sp.page ?? "1") || 1);
   const perPage = Math.min(50, Math.max(5, Number(sp.perPage ?? "20") || 20));
   const limit = Math.min(1000, Math.max(50, Number(sp.limit ?? "200") || 200));
-  const searchResult = query
+  const normalizedTag = normalizeTag(rawQuery);
+  const metaTagQuery =
+    normalizedTag.startsWith("genre:") || normalizedTag.startsWith("maker:")
+      ? normalizedTag
+      : null;
+
+  const searchResult =
+    metaTagQuery && (mode === "all" || mode === "works")
+      ? await getWorksByMetaTagPage(metaTagQuery, page, perPage)
+      : query
     ? await searchArticlesPage({
         query,
         page,
@@ -131,7 +145,8 @@ export default async function SearchPage({
     : [];
 
   const sorted = orderResults(sortResults(results, mode), order);
-  const effectiveTotal = query.startsWith("#") ? results.length : searchResult.total;
+  const effectiveTotal =
+    metaTagQuery ? searchResult.total : query.startsWith("#") ? results.length : searchResult.total;
   const totalPages = Math.max(1, Math.ceil(effectiveTotal / perPage));
   const safePage = Math.min(page, totalPages);
   const start = (safePage - 1) * perPage;

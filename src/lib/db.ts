@@ -248,6 +248,40 @@ export async function getWorksByGenre(genre: string, limit = 12) {
   return (data ?? []).map((row) => normalizeArticle(row as Article));
 }
 
+export async function getWorksByMetaTagPage(
+  tag: string,
+  page = 1,
+  perPage = 20
+) {
+  const client = getSupabase();
+  const safePage = Math.max(1, page);
+  const safePerPage = Math.min(100, Math.max(1, perPage));
+  const from = (safePage - 1) * safePerPage;
+  const to = from + safePerPage - 1;
+
+  let builder = client
+    .from("articles")
+    .select("*", { count: "exact" })
+    .eq("type", "work");
+
+  if (tag.startsWith("genre:")) {
+    const value = tag.replace("genre:", "");
+    builder = builder.contains("meta_genres", [value]);
+  } else if (tag.startsWith("maker:")) {
+    const value = tag.replace("maker:", "");
+    builder = builder.contains("meta_makers", [value]);
+  }
+
+  const { data, error, count } = await builder
+    .order("published_at", { ascending: false })
+    .range(from, to);
+  if (error) throw error;
+  return {
+    items: (data ?? []).map((row) => normalizeArticle(row as Article)),
+    total: count ?? 0,
+  };
+}
+
 type SearchOrder = "newest" | "oldest" | "title";
 
 export async function searchArticlesPage(options: {
