@@ -3,6 +3,7 @@ import { Metadata } from "next";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import { buildPagination } from "@/lib/pagination";
 import { tagLabel } from "@/lib/tagging";
+import { getTagStats, getTopTags } from "@/lib/db";
 import { SITE } from "@/lib/site";
 
 export const dynamic = "force-dynamic";
@@ -46,9 +47,12 @@ export default async function TagsPage({
   const query = (sp.q ?? "").trim().toLowerCase();
   const page = Math.max(1, Number(sp.page ?? "1") || 1);
   const perPage = 12;
+  const stats = await getTagStats(6000);
+  const tagCounts = new Map(stats.map((row) => [row.tag, row.work_count]));
+  const merged = Array.from(new Set([...TAGS, ...stats.map((row) => row.tag)]));
   const filtered = query
-    ? TAGS.filter((tag) => tagLabel(tag).toLowerCase().includes(query))
-    : TAGS;
+    ? merged.filter((tag) => tagLabel(tag).toLowerCase().includes(query))
+    : merged;
   const totalPages = Math.max(1, Math.ceil(filtered.length / perPage));
   const safePage = Math.min(page, totalPages);
   const start = (safePage - 1) * perPage;
@@ -150,6 +154,21 @@ export default async function TagsPage({
           </form>
         </header>
 
+        <section className="rounded-3xl border border-border bg-card p-6">
+          <h2 className="text-lg font-semibold">人気タグ</h2>
+          <div className="mt-4 flex flex-wrap gap-2">
+            {(await getTopTags(12)).map((row) => (
+              <Link
+                key={row.tag}
+                href={`/tags/${row.tag}`}
+                className="rounded-full border border-border bg-white px-3 py-1 text-xs font-semibold text-muted hover:border-accent/40"
+              >
+                {tagLabel(row.tag)} ({row.work_count})
+              </Link>
+            ))}
+          </div>
+        </section>
+
         <section className="rounded-3xl border border-border bg-white p-6">
           <div className="grid gap-3 sm:grid-cols-2">
             {pageItems.map((tag) => (
@@ -161,7 +180,9 @@ export default async function TagsPage({
                 <p className="text-[10px] uppercase tracking-[0.25em] text-muted">Tag</p>
                 <p className="mt-2 text-sm font-semibold">#{tagLabel(tag)}</p>
                 <p className="mt-1 text-xs text-muted line-clamp-2">
-                  {tagLabel(tag)}の関連作品・トピック
+                  {tagCounts.has(tag)
+                    ? `${tagLabel(tag)}の関連作品 ${tagCounts.get(tag)}件`
+                    : `${tagLabel(tag)}の関連作品・トピック`}
                 </p>
               </Link>
             ))}

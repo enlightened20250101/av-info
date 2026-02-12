@@ -80,6 +80,13 @@ type Database = {
           latest_published_at: string | null;
         };
       };
+      tag_stats: {
+        Row: {
+          tag: string;
+          work_count: number;
+          latest_published_at: string | null;
+        };
+      };
     };
     Functions: {};
     Enums: {};
@@ -281,6 +288,7 @@ export async function refreshSiteStats() {
 export type ActressStat = Database["public"]["Views"]["actress_stats"]["Row"];
 export type GenreStat = Database["public"]["Views"]["genre_stats"]["Row"];
 export type MakerStat = Database["public"]["Views"]["maker_stats"]["Row"];
+export type TagStat = Database["public"]["Views"]["tag_stats"]["Row"];
 
 export async function getActressStats(limit = 5000) {
   const client = getSupabase();
@@ -346,4 +354,26 @@ export async function getTopMakers(limit = 20) {
     .limit(limit);
   if (error) throw error;
   return (data ?? []) as MakerStat[];
+}
+
+export async function getTagStats(limit = 5000) {
+  const client = getSupabase();
+  const { data, error } = await client
+    .from("tag_stats")
+    .select("*")
+    .order("tag", { ascending: true })
+    .limit(limit);
+  if (error) throw error;
+  return (data ?? []) as TagStat[];
+}
+
+export async function getTopTags(limit = 20) {
+  const client = getSupabase();
+  const { data, error } = await client
+    .from("tag_stats")
+    .select("*")
+    .order("work_count", { ascending: false })
+    .limit(limit);
+  if (error) throw error;
+  return (data ?? []) as TagStat[];
 }
