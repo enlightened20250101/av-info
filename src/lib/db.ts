@@ -175,6 +175,22 @@ export async function getLatestByType(type: ArticleType, limit = 10) {
   return (data ?? []).map((row) => normalizeArticle(row as Article));
 }
 
+export async function getWorkSlugs(limit = 2000) {
+  const client = getSupabase();
+  const { data, error } = await client
+    .from("articles")
+    .select("slug")
+    .eq("type", "work")
+    .order("published_at", { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    throw error;
+  }
+
+  return new Set((data ?? []).map((row: { slug: string }) => row.slug));
+}
+
 export async function getArticleBySlug(slug: string) {
   const client = getSupabase();
   const { data, error } = await client

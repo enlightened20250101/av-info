@@ -4,7 +4,12 @@ import { RawFanzaWork } from "@/lib/schema";
 
 const FANZA_ENDPOINT = "https://api.dmm.com/affiliate/v3/ItemList";
 
-export async function fetchFanzaWorks(): Promise<RawFanzaWork[]> {
+type FetchFanzaOptions = {
+  skipSlugs?: Set<string>;
+  targetNew?: number;
+};
+
+export async function fetchFanzaWorks(options: FetchFanzaOptions = {}): Promise<RawFanzaWork[]> {
   const apiId = getEnv("DMM_API_ID", "");
   const affiliateId = getEnv("DMM_AFFILIATE_ID", "");
   if (!apiId || !affiliateId) {
@@ -14,53 +19,65 @@ export async function fetchFanzaWorks(): Promise<RawFanzaWork[]> {
 
   const site = getEnv("DMM_SITE", "FANZA");
   const hits = Number(getEnv("DMM_HITS_PER_RUN", "3"));
+  const targetNew = Math.max(1, options.targetNew ?? hits);
   const sort = getEnv("DMM_SORT", "date");
   const serviceParam = getEnv("DMM_SERVICE_PARAM", "service");
   const floorParam = getEnv("DMM_FLOOR_PARAM", "floor");
   const serviceValue = getEnv("DMM_SERVICE", "digital");
   const floorValue = getEnv("DMM_FLOOR", "videoa");
 
-  const params = new URLSearchParams({
-    api_id: apiId,
-    affiliate_id: affiliateId,
-    site,
-    sort,
-    hits: String(hits),
-    output: "json",
-  });
-
-  if (serviceValue) {
-    params.set(serviceParam, serviceValue);
-  }
-  if (floorValue) {
-    params.set(floorParam, floorValue);
-  }
-
-  const url = `${FANZA_ENDPOINT}?${params.toString()}`;
-  const response = await fetchWithRetry(
-    url,
-    {
-      headers: { "User-Agent": "av-info-mvp/1.0" },
-      cache: "no-store",
-    },
-    {
-      retries: Number(getEnv("FETCH_RETRIES", "2")),
-      timeoutMs: Number(getEnv("FETCH_TIMEOUT_MS", "8000")),
-      backoffMs: Number(getEnv("FETCH_BACKOFF_MS", "800")),
-    }
-  );
-
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(`FANZA API error: ${response.status} ${response.statusText} ${text}`);
-  }
-
-  const data = await response.json();
-  const items = data?.result?.items ?? [];
+  const perPage = Math.min(100, Math.max(hits, 20));
+  const maxPages = Number(getEnv("DMM_MAX_PAGES", "5"));
+  const nowPrintingPattern = /now[_-]?printing/i;
   const fetchedAt = new Date().toISOString();
 
-  return items.map((item: any) => {
-    const contentId = item.content_id || item.product_id || item.goods_id;
+  const results: RawFanzaWork[] = [];
+  let offset = 1;
+  const skipSlugs = options.skipSlugs ?? new Set<string>();
+
+  for (let page = 0; page < maxPages && results.length < targetNew; page += 1) {
+    const params = new URLSearchParams({
+      api_id: apiId,
+      affiliate_id: affiliateId,
+      site,
+      sort,
+      hits: String(perPage),
+      offset: String(offset),
+      output: "json",
+    });
+
+    if (serviceValue) {
+      params.set(serviceParam, serviceValue);
+    }
+    if (floorValue) {
+      params.set(floorParam, floorValue);
+    }
+
+    const url = `${FANZA_ENDPOINT}?${params.toString()}`;
+    const response = await fetchWithRetry(
+      url,
+      {
+        headers: { "User-Agent": "av-info-mvp/1.0" },
+        cache: "no-store",
+      },
+      {
+        retries: Number(getEnv("FETCH_RETRIES", "2")),
+        timeoutMs: Number(getEnv("FETCH_TIMEOUT_MS", "8000")),
+        backoffMs: Number(getEnv("FETCH_BACKOFF_MS", "800")),
+      }
+    );
+
+    if (!response.ok) {
+      const text = await response.text();
+      throw new Error(`FANZA API error: ${response.status} ${response.statusText} ${text}`);
+    }
+
+    const data = await response.json();
+    const items = data?.result?.items ?? [];
+    if (items.length === 0) break;
+
+    for (const item of items) {
+      const contentId = item.content_id || item.product_id || item.goods_id;
     const title = item.title || item.name || "(untitled)";
     const actresses = (item?.iteminfo?.actress ?? []).map((a: any) => a?.name).filter(Boolean);
     const maker = item?.iteminfo?.maker?.[0]?.name ?? null;
@@ -91,7 +108,30 @@ export async function fetchFanzaWorks(): Promise<RawFanzaWork[]> {
     addImage(item?.imageURL?.sample);
     addImage(item?.sampleImageURL);
 
-    const uniqueImages = Array.from(new Set(imageCandidates.filter(Boolean))) as string[];
+    const apiImages = imageCandidates.filter(Boolean);
+    const hasRealImage = apiImages.some((url) => !nowPrintingPattern.test(url));
+    if (apiImages.length > 0 && !hasRealImage) {
+      continue;
+    }
+
+    const slugCandidate = String(contentId ?? "").trim().toUpperCase();
+    if (skipSlugs.has(slugCandidate)) {
+      continue;
+    }
+
+    const normalizedId = String(contentId ?? "").trim().toLowerCase();
+    const inferred: string[] = [];
+    if (normalizedId) {
+      const base = `https://awsimgsrc.dmm.co.jp/pics_dig/digital/video/${normalizedId}/${normalizedId}`;
+      inferred.push(`${base}pl.jpg`);
+      for (let idx = 1; idx <= 9; idx += 1) {
+        inferred.push(`${base}jp-${idx}.jpg`);
+      }
+    }
+
+    const uniqueImages = Array.from(
+      new Set([...inferred, ...imageCandidates.filter(Boolean)])
+    ) as string[];
     const images = uniqueImages.slice(0, 5).map((url: string, idx: number) => ({
       url,
       alt: `${title} ${idx + 1}`,
@@ -100,7 +140,7 @@ export async function fetchFanzaWorks(): Promise<RawFanzaWork[]> {
     const canonicalUrl = item?.URL || item?.URLS?.affiliate || item?.URLS?.pc;
     const affiliateUrl = item?.URLS?.affiliate ?? null;
 
-    return {
+    results.push({
       content_id: String(contentId),
       title: String(title),
       actresses,
@@ -113,6 +153,13 @@ export async function fetchFanzaWorks(): Promise<RawFanzaWork[]> {
       canonical_url: String(canonicalUrl),
       affiliate_url: affiliateUrl,
       fetched_at: fetchedAt,
-    } satisfies RawFanzaWork;
-  });
+    } satisfies RawFanzaWork);
+
+    if (results.length >= targetNew) break;
+    }
+
+    offset += perPage;
+  }
+
+  return results.slice(0, targetNew);
 }

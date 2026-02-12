@@ -6,6 +6,16 @@ import { getEnv, requireEnv } from "@/lib/env";
 // affiliate_url がAPIから返らない場合はテンプレで生成する方針。
 function buildAffiliateUrl(canonicalUrl: string, affiliateId: string) {
   if (!canonicalUrl) return "";
+
+  const newTemplate = getEnv("DMM_NEW_AFFILIATE_URL_TEMPLATE", "");
+  if (newTemplate) {
+    const encoded = encodeURIComponent(canonicalUrl);
+    return newTemplate
+      .replace("{encoded_url}", encoded)
+      .replace("{url}", canonicalUrl)
+      .replace("{affiliate_id}", affiliateId);
+  }
+
   try {
     const url = new URL(canonicalUrl);
     if (!url.searchParams.has("aff_id")) {

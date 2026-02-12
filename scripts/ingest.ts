@@ -13,7 +13,7 @@ import { normalizeRanking } from "@/normalizers/normalize_ranking";
 import { normalizeSummary } from "@/normalizers/normalize_summary";
 import { normalizeRssTopic } from "@/normalizers/normalize_rss_topic";
 import { extractTags, pickRelatedWorks, tagLabel, tagSummary } from "@/lib/tagging";
-import { findWorksByActressSlug, getLatestByType, upsertArticle } from "@/lib/db";
+import { findWorksByActressSlug, getLatestByType, getWorkSlugs, upsertArticle } from "@/lib/db";
 import { slugify } from "@/lib/text";
 import { Article, ArticleImage } from "@/lib/schema";
 import { v4 as uuidv4 } from "uuid";
@@ -181,7 +181,9 @@ async function buildTopicLinks(text: string) {
 }
 
 async function ingestFanzaWorks() {
-  const raws = await fetchFanzaWorks();
+  const targetNew = Number(process.env.DMM_HITS_PER_RUN ?? "3");
+  const skipSlugs = await getWorkSlugs(5000);
+  const raws = await fetchFanzaWorks({ skipSlugs, targetNew });
   const total = raws.length;
 
   let upserted = 0;
