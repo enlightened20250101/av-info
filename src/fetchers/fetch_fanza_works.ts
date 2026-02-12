@@ -30,6 +30,7 @@ export async function fetchFanzaWorks(options: FetchFanzaOptions = {}): Promise<
   const maxPages = Number(getEnv("DMM_MAX_PAGES", "5"));
   const nowPrintingPattern = /now[_-]?printing/i;
   const fetchedAt = new Date().toISOString();
+  const skipVr = getEnv("DMM_SKIP_VR", "true") !== "false";
 
   const results: RawFanzaWork[] = [];
   let offset = 1;
@@ -85,6 +86,12 @@ export async function fetchFanzaWorks(options: FetchFanzaOptions = {}): Promise<
     const genre = (item?.iteminfo?.genre ?? []).map((g: any) => g?.name).filter(Boolean);
     const series = item?.iteminfo?.series?.[0]?.name ?? null;
     const releaseDate = item?.date ?? item?.release_date ?? null;
+    const normalizedContentId = String(contentId ?? "").trim().toLowerCase();
+    const isVr =
+      /^vr/i.test(normalizedContentId) || genre.some((value) => /vr/i.test(String(value)));
+    if (skipVr && isVr) {
+      continue;
+    }
 
     const imageCandidates: string[] = [];
     const addImage = (value: unknown) => {
@@ -119,10 +126,9 @@ export async function fetchFanzaWorks(options: FetchFanzaOptions = {}): Promise<
       continue;
     }
 
-    const normalizedId = String(contentId ?? "").trim().toLowerCase();
     const inferred: string[] = [];
-    if (normalizedId) {
-      const base = `https://awsimgsrc.dmm.co.jp/pics_dig/digital/video/${normalizedId}/${normalizedId}`;
+    if (normalizedContentId) {
+      const base = `https://awsimgsrc.dmm.co.jp/pics_dig/digital/video/${normalizedContentId}/${normalizedContentId}`;
       inferred.push(`${base}pl.jpg`);
       const hasJp = apiImages.some((url) => /jp-\d+\.jpg/i.test(url));
       if (hasJp) {
