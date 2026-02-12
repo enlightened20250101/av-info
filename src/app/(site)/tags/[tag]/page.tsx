@@ -243,7 +243,15 @@ export default async function TagPage({ params }: { params: Promise<{ tag: strin
         </section>
 
         <section className="rounded-3xl border border-border bg-card p-6">
-          <h2 className="text-lg font-semibold">人気作品</h2>
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold">人気作品</h2>
+            <Link
+              href={`/search?q=%23${encodeURIComponent(normalizedTag)}`}
+              className="text-xs font-semibold text-accent"
+            >
+              もっと見る →
+            </Link>
+          </div>
           {popularWorks.length === 0 ? (
             <p className="mt-3 text-sm text-muted">まだ作品がありません。</p>
           ) : (
@@ -288,7 +296,7 @@ export default async function TagPage({ params }: { params: Promise<{ tag: strin
                   href={`/tags/${encodeURIComponent(tag)}`}
                   className="rounded-full border border-border bg-white px-3 py-1 text-xs font-semibold text-muted hover:border-accent/40"
                 >
-                  {tag.replace(/^genre:/, "ジャンル:").replace(/^maker:/, "メーカー:")}
+                  {tagLabel(tag)}
                 </Link>
               ))}
             </div>
