@@ -519,5 +519,5 @@ export async function getPopularTagsFromTopics(limit = 20) {
     .order("published_at", { ascending: false })
     .limit(200);
   if (error) throw error;
-  return data ?? [];
+  return (data ?? []) as { title: string | null; summary: string | null }[];
 }
