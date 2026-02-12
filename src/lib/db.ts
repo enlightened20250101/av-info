@@ -20,6 +20,7 @@ type Database = {
           embed_html: string | null;
           meta_genres: Json;
           meta_makers: Json;
+          search_tsv: unknown;
           related_works: Json;
           related_actresses: Json;
           published_at: string;
@@ -38,6 +39,7 @@ type Database = {
           embed_html?: string | null;
           meta_genres?: Json;
           meta_makers?: Json;
+          search_tsv?: unknown;
           related_works: Json;
           related_actresses: Json;
           published_at: string;
@@ -56,6 +58,7 @@ type Database = {
           embed_html?: string | null;
           meta_genres?: Json;
           meta_makers?: Json;
+          search_tsv?: unknown;
           related_works?: Json;
           related_actresses?: Json;
           published_at?: string;
@@ -314,7 +317,7 @@ export async function searchArticlesPage(options: {
   let builder = client
     .from("articles")
     .select("*", { count: "exact" })
-    .or(`title.ilike.%${query}%,summary.ilike.%${query}%,slug.ilike.%${query}%`);
+    .textSearch("search_tsv", rawQuery, { type: "websearch", config: "simple" } as never);
 
   if (options.type) {
     builder = builder.eq("type", options.type);

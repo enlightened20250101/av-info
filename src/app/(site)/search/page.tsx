@@ -129,12 +129,16 @@ export default async function SearchPage({
     : await getLatestArticles(limit).then((items) => ({ items, total: items.length }));
   const articles = searchResult.items;
 
+  const isHashTagQuery = query.startsWith("#");
   const results = query
     ? articles.filter((article) => {
+        if (!isHashTagQuery && metaTagQuery) {
+          return true;
+        }
         const text = `${article.title} ${article.summary} ${article.slug}`;
         if (matchArticle(text, query)) return true;
 
-        if (query.startsWith("#")) {
+        if (isHashTagQuery) {
           const tagKey = query.replace("#", "");
           return extractTags(text).includes(tagKey);
         }
@@ -146,7 +150,7 @@ export default async function SearchPage({
 
   const sorted = orderResults(sortResults(results, mode), order);
   const effectiveTotal =
-    metaTagQuery ? searchResult.total : query.startsWith("#") ? results.length : searchResult.total;
+    metaTagQuery || !isHashTagQuery ? searchResult.total : results.length;
   const totalPages = Math.max(1, Math.ceil(effectiveTotal / perPage));
   const safePage = Math.min(page, totalPages);
   const start = (safePage - 1) * perPage;
