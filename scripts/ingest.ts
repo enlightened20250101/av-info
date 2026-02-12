@@ -128,6 +128,22 @@ function parseList(value: unknown) {
     .filter(Boolean);
 }
 
+function parseMetaFromBody(body: string, label: string) {
+  const line = body
+    .split("\n")
+    .find((entry) => entry.trim().startsWith(`${label}:`));
+  if (!line) return [];
+  const value = line.replace(`${label}:`, "").trim();
+  if (!value) return [];
+  if (label === "ジャンル") {
+    return value
+      .split("/")
+      .map((item) => item.trim())
+      .filter(Boolean);
+  }
+  return [value];
+}
+
 function buildImages(record: Record<string, string>, title: string) {
   const images: ArticleImage[] = [];
   for (let index = 1; index <= 10; index += 1) {
@@ -150,6 +166,15 @@ function normalizeSheetRow(record: Record<string, string>) {
 
   const publishedAt = parsePublishedAt(record.published_at);
   const relatedActresses = parseList(record.related_actresses).map((value) => slugify(value));
+  const body = record.body?.trim() || title;
+  const metaGenres =
+    parseList(record.meta_genres).length > 0
+      ? parseList(record.meta_genres)
+      : parseMetaFromBody(body, "ジャンル");
+  const metaMakers =
+    parseList(record.meta_makers).length > 0
+      ? parseList(record.meta_makers)
+      : parseMetaFromBody(body, "メーカー");
   const images = buildImages(record, title);
 
   const article: Article = {
@@ -158,11 +183,13 @@ function normalizeSheetRow(record: Record<string, string>) {
     slug,
     title,
     summary: record.summary?.trim() || `${title} の作品情報。`,
-    body: record.body?.trim() || title,
+    body,
     images,
     source_url: sourceUrl,
     affiliate_url: affiliateUrl,
     embed_html: embedHtml,
+    meta_genres: metaGenres,
+    meta_makers: metaMakers,
     related_works: [],
     related_actresses: relatedActresses,
     published_at: publishedAt.toISOString(),

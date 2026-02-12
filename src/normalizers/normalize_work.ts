@@ -77,6 +77,8 @@ export function normalizeFanzaWork(raw: RawFanzaWork, publishedAt: Date): Articl
 
   const affiliateUrl = raw.affiliate_url ?? buildAffiliateUrl(raw.canonical_url, affiliateId);
   const workCode = raw.content_id.toUpperCase();
+  const metaGenres = raw.genre.filter(Boolean);
+  const metaMakers = raw.maker ? [raw.maker] : [];
 
   const bodyLines = [
     `作品番号: ${workCode}`,
@@ -100,6 +102,8 @@ export function normalizeFanzaWork(raw: RawFanzaWork, publishedAt: Date): Articl
     source_url: raw.canonical_url,
     affiliate_url: affiliateUrl,
     embed_html: raw.embed_html ?? buildEmbedHtml(raw.content_id),
+    meta_genres: metaGenres,
+    meta_makers: metaMakers,
     related_works: [],
     related_actresses: actresses,
     published_at: publishedAt.toISOString(),

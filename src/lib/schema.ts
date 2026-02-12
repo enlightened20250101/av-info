@@ -16,6 +16,8 @@ export type Article = {
   source_url: string;
   affiliate_url: string | null;
   embed_html?: string | null;
+  meta_genres?: string[];
+  meta_makers?: string[];
   related_works: string[];
   related_actresses: string[];
   published_at: string;

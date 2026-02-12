@@ -18,6 +18,8 @@ type Database = {
           source_url: string;
           affiliate_url: string | null;
           embed_html: string | null;
+          meta_genres: Json;
+          meta_makers: Json;
           related_works: Json;
           related_actresses: Json;
           published_at: string;
@@ -34,6 +36,8 @@ type Database = {
           source_url: string;
           affiliate_url?: string | null;
           embed_html?: string | null;
+          meta_genres?: Json;
+          meta_makers?: Json;
           related_works: Json;
           related_actresses: Json;
           published_at: string;
@@ -50,6 +54,8 @@ type Database = {
           source_url?: string;
           affiliate_url?: string | null;
           embed_html?: string | null;
+          meta_genres?: Json;
+          meta_makers?: Json;
           related_works?: Json;
           related_actresses?: Json;
           published_at?: string;
@@ -136,6 +142,8 @@ function normalizeArticle(row: Article): Article {
   return {
     ...row,
     images: parseArray(row.images),
+    meta_genres: parseArray(row.meta_genres),
+    meta_makers: parseArray(row.meta_makers),
     related_works: parseArray(row.related_works),
     related_actresses: parseArray(row.related_actresses),
   };
