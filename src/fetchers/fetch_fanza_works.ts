@@ -150,15 +150,13 @@ export async function fetchFanzaWorks(options: FetchFanzaOptions = {}): Promise<
     const inferred: string[] = [];
     const fallbackThumbs: string[] = [];
     if (normalizedContentId) {
-      const base = `https://awsimgsrc.dmm.co.jp/pics_dig/digital/video/${normalizedContentId}/${normalizedContentId}`;
-      inferred.push(`${base}pl.jpg`);
-      fallbackThumbs.push(
-        `https://pics.dmm.co.jp/digital/video/${normalizedContentId}/${normalizedContentId}pl.jpg`
-      );
+      const baseAws = `https://awsimgsrc.dmm.co.jp/pics_dig/digital/video/${normalizedContentId}/${normalizedContentId}`;
+      const heavyThumb = `${baseAws}pl.jpg`;
+      inferred.push(heavyThumb);
       const hasJp = apiImages.some((url) => /jp-\d+\.jpg/i.test(url));
       if (hasJp) {
         for (let idx = 1; idx <= 9; idx += 1) {
-          inferred.push(`${base}jp-${idx}.jpg`);
+          inferred.push(`${baseAws}jp-${idx}.jpg`);
         }
       }
     }

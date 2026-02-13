@@ -154,8 +154,10 @@ function optimizeImageUrl(url: string | null | undefined) {
   if (!base) return url;
   const quality = (process.env.NEXT_PUBLIC_IMAGE_PROXY_QUALITY ?? "70").trim();
   const width = (process.env.NEXT_PUBLIC_IMAGE_PROXY_WIDTH ?? "900").trim();
+  const isWeserv = /weserv\.nl|wsrv\.nl/i.test(base);
+  const urlParam = isWeserv ? url.replace(/^https?:\/\//i, "") : url;
   const separator = base.includes("?") ? "&" : "?";
-  return `${base}${separator}url=${encodeURIComponent(url)}&w=${encodeURIComponent(
+  return `${base}${separator}url=${encodeURIComponent(urlParam)}&w=${encodeURIComponent(
     width
   )}&q=${encodeURIComponent(quality)}`;
 }
