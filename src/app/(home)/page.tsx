@@ -1,12 +1,11 @@
 import Link from "next/link";
 import { Metadata } from "next";
-import { extractTags, tagLabel } from "@/lib/tagging";
+import { tagLabel } from "@/lib/tagging";
 import {
   getActressRanking,
   getActressCovers,
   getLatestArticles,
   getLatestByType,
-  getTopGenres,
   getTopTags,
 } from "@/lib/db";
 import { buildPagination } from "@/lib/pagination";
@@ -24,13 +23,6 @@ export const metadata: Metadata = {
     type: "website",
   },
 };
-
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleString("ja-JP", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  });
-}
 
 function seedFromString(value: string) {
   let hash = 0;
@@ -60,6 +52,39 @@ function pickDailyRandom<T>(items: T[], count: number) {
   return shuffled.slice(0, count);
 }
 
+function getJstNow() {
+  return new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Tokyo" }));
+}
+
+function isUpcoming(iso: string, now: Date) {
+  const time = new Date(iso).getTime();
+  return Number.isFinite(time) && time > now.getTime();
+}
+
+function pickRanked<T extends { slug: string; images: { url: string }[] }>(
+  items: T[],
+  count: number,
+  seedKey: string,
+  used: Set<string>
+) {
+  const today = new Date().toLocaleDateString("ja-JP", { timeZone: "Asia/Tokyo" });
+  const rand = seededRandom(seedFromString(`${today}-${seedKey}`));
+  const shuffled = [...items];
+  for (let i = shuffled.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(rand() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  const result: T[] = [];
+  for (const item of shuffled) {
+    if (!item.images?.[0]?.url) continue;
+    if (used.has(item.slug)) continue;
+    used.add(item.slug);
+    result.push(item);
+    if (result.length >= count) break;
+  }
+  return result;
+}
+
  
 export default async function Home({
   searchParams,
@@ -75,7 +100,7 @@ export default async function Home({
   const start = (safePage - 1) * perPage;
   const latestPage = latest.slice(start, start + perPage);
 
-  const latestWorks = await getLatestByType("work", 50);
+  const latestWorks = await getLatestByType("work", 120);
   const latestTopics = await getLatestByType("topic", 12);
   const summaryTopics = latestTopics.filter((topic) =>
     topic.source_url.startsWith("internal:summary:")
@@ -83,15 +108,24 @@ export default async function Home({
   const rankingTopics = latestTopics.filter((topic) =>
     topic.source_url.startsWith("internal:ranking:")
   );
-  const dailyTopics = latestTopics.filter(
-    (topic) =>
-      !topic.source_url.startsWith("internal:ranking:") &&
-      !topic.source_url.startsWith("internal:summary:")
-  );
 
   const popularTags = (await getTopTags(12)).map((row) => row.tag);
-  const topGenres = await getTopGenres(8);
-  const popularGenres = topGenres.map((row) => `genre:${row.genre}`);
+  const fixedTags = [
+    "素人",
+    "巨乳",
+    "処女",
+    "美少女",
+    "OL",
+    "看護師・ナース",
+    "女教師",
+    "人妻",
+    "熟女",
+    "水着",
+  ];
+  const sidebarTags = [
+    ...fixedTags,
+    ...popularTags.filter((tag) => !fixedTags.includes(tag)).slice(0, 8),
+  ];
   const topActresses = await getActressRanking(8);
   const actressSlugs = topActresses.map((row) => row.actress);
   const actressCoverMap = await getActressCovers(actressSlugs);
@@ -103,14 +137,30 @@ export default async function Home({
       latestWorks.find((work) => work.related_actresses.includes(row.actress))?.images?.[0]?.url ??
       null,
   }));
-  const heroCandidates = latestWorks.filter((work) => work.images[0]?.url);
+  const now = getJstNow();
+  const availableWorks = latestWorks.filter((work) => !isUpcoming(work.published_at, now));
+  const upcomingWorks = latestWorks.filter((work) => isUpcoming(work.published_at, now));
+  const heroCandidates = availableWorks.filter((work) => work.images[0]?.url);
   const heroWorks = pickDailyRandom(heroCandidates, 9);
-  const visualWorks = latestWorks.slice(0, 12);
+  const recommendedWorks = pickDailyRandom(
+    availableWorks.filter((work) => work.images[0]?.url),
+    9
+  );
+  const dailyPool = availableWorks.filter(
+    (work) => new Date(work.published_at).getTime() >= now.getTime() - 24 * 60 * 60 * 1000
+  );
+  const weeklyPool = availableWorks.filter(
+    (work) => new Date(work.published_at).getTime() >= now.getTime() - 7 * 24 * 60 * 60 * 1000
+  );
+  const monthlyPool = availableWorks.filter(
+    (work) => new Date(work.published_at).getTime() >= now.getTime() - 30 * 24 * 60 * 60 * 1000
+  );
+  const usedRanking = new Set<string>();
+  const dailyRanking = pickRanked(dailyPool, 8, "daily", usedRanking);
+  const weeklyRanking = pickRanked(weeklyPool, 8, "weekly", usedRanking);
+  const monthlyRanking = pickRanked(monthlyPool, 8, "monthly", usedRanking);
+  const visualWorks = availableWorks.slice(0, 12);
   const visualArticles = latestPage.slice(0, 12);
-  const miniRankingLines = rankingTopics[0]?.body
-    ?.split("\n")
-    .filter((line) => /^\d+\.\s/.test(line))
-    .slice(0, 5) ?? [];
   const workMap = new Map(latestWorks.map((work) => [work.slug, work]));
   const getTopicCover = (topic: Article) => {
     const relatedSlug = topic.related_works?.[0];
@@ -127,31 +177,12 @@ export default async function Home({
           <div className="pointer-events-none absolute inset-0 rounded-[32px] border border-white/60" />
           <div className="luxe-glow pointer-events-none absolute -left-12 -top-16 h-48 w-48 rounded-full bg-accent/22 blur-[90px]" />
           <div className="luxe-glow pointer-events-none absolute -right-10 -bottom-10 h-40 w-40 rounded-full bg-foreground/10 blur-[80px]" />
-          <div className="flex items-center justify-between">
-            <p className="text-xs uppercase tracking-[0.3em] text-muted">最新作品随時更新中!</p>
-            <div className="rounded-full bg-accent-soft px-3 py-1 text-[11px] font-semibold text-accent">
-              Daily
-            </div>
-          </div>
-          <h1 className="mt-6 text-3xl font-semibold tracking-tight sm:text-4xl">
+          <p className="text-xs uppercase tracking-[0.3em] text-muted">最新作品随時更新中!</p>
+          <h1 className="mt-4 text-3xl font-semibold tracking-tight sm:text-4xl">
             {SITE.name}
           </h1>
-          <p className="mt-3 text-sm text-muted">{SITE.description}</p>
-          <div className="mt-6 flex flex-wrap gap-2">
-            <Link
-              href="/works"
-              className="pressable rounded-full bg-accent px-5 py-2 text-xs font-semibold text-white shadow-[0_10px_30px_-20px_rgba(0,0,0,0.6)] hover:bg-accent/90"
-            >
-              作品を見る
-            </Link>
-            <Link
-              href="/topics"
-              className="pressable rounded-full border border-border bg-white px-5 py-2 text-xs font-semibold text-muted hover:border-accent/40"
-            >
-              トピックへ
-            </Link>
-          </div>
-          <form action="/search" method="get" className="mt-6 flex flex-col gap-3">
+          <p className="mt-2 text-sm text-muted">{SITE.description}</p>
+          <form action="/search" method="get" className="mt-5 flex flex-col gap-3">
             <div className="flex gap-2">
               <input
                 name="q"
@@ -165,46 +196,21 @@ export default async function Home({
                 検索
               </button>
             </div>
-            <div className="flex flex-wrap gap-2">
-              <Link
-                href="/search?q=SSIS"
-                className="rounded-full border border-border bg-white px-3 py-1 text-[11px] font-semibold text-muted hover:border-accent/40"
-              >
-                作品番号
-              </Link>
-              <Link
-                href="/search?q=actress"
-                className="rounded-full border border-border bg-white px-3 py-1 text-[11px] font-semibold text-muted hover:border-accent/40"
-              >
-                女優
-              </Link>
-              <Link
-                href="/search?q=%23新人"
-                className="rounded-full border border-border bg-white px-3 py-1 text-[11px] font-semibold text-muted hover:border-accent/40"
-              >
-                #新人
-              </Link>
-              <Link
-                href="/search?q=%23独占"
-                className="rounded-full border border-border bg-white px-3 py-1 text-[11px] font-semibold text-muted hover:border-accent/40"
-              >
-                #独占
-              </Link>
-            </div>
           </form>
-          {popularTags.length > 0 ? (
-            <div className="mt-4 flex flex-wrap gap-2">
-              {popularTags.map((tag) => (
-                <Link
-                  key={tag}
-                  href={`/tags/${tag}`}
-                  className="rounded-full border border-border bg-white px-3 py-1 text-[11px] font-semibold text-muted hover:border-accent/40"
-                >
-                  #{tagLabel(tag)}
-                </Link>
-              ))}
-            </div>
-          ) : null}
+          <div className="mt-4 flex flex-wrap gap-2">
+            <Link
+              href="/works"
+              className="pressable rounded-full bg-accent px-5 py-2 text-xs font-semibold text-white shadow-[0_10px_30px_-20px_rgba(0,0,0,0.6)] hover:bg-accent/90"
+            >
+              作品を見る
+            </Link>
+            <Link
+              href="/actresses/ranking"
+              className="pressable rounded-full border border-border bg-white px-5 py-2 text-xs font-semibold text-muted hover:border-accent/40"
+            >
+              女優ランキング
+            </Link>
+          </div>
         </div>
         <div className="grid auto-rows-[140px] grid-cols-3 gap-3">
           {heroWorks.length === 0 ? (
@@ -216,7 +222,7 @@ export default async function Home({
               <Link
                 key={work.id}
                 href={`/works/${work.slug}`}
-                className={`group pressable relative overflow-hidden rounded-[24px] border border-border bg-white shadow-[0_20px_50px_-35px_rgba(0,0,0,0.45)] luxe-fade ${
+                className={`group pressable relative overflow-hidden rounded-2xl border border-border bg-white shadow-[0_20px_50px_-35px_rgba(0,0,0,0.45)] luxe-fade ${
                   index === 0 ? "col-span-2 row-span-2" : ""
                 } ${index === 1 ? "luxe-delay-1" : index === 2 ? "luxe-delay-2" : index === 3 ? "luxe-delay-3" : index === 4 ? "luxe-delay-4" : index === 5 ? "luxe-delay-5" : index === 6 ? "luxe-delay-6" : index === 7 ? "luxe-delay-7" : ""}`}
               >
@@ -240,422 +246,397 @@ export default async function Home({
         </div>
       </header>
 
-      {popularGenres.length > 0 ? (
-        <section className="mx-auto mt-10 w-full max-w-6xl">
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-muted">
-              Genres
-            </h2>
-            <Link href="/tags" className="text-xs font-semibold text-accent">
-              タグ一覧へ →
-            </Link>
-          </div>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {popularGenres.map((tag) => (
-              <Link
-                key={tag}
-                href={`/tags/${encodeURIComponent(tag)}`}
-                className="rounded-full border border-border bg-white px-3 py-1 text-[11px] font-semibold text-muted hover:border-accent/40"
-              >
-                {tagLabel(tag)}
-              </Link>
-            ))}
-          </div>
-        </section>
-      ) : null}
+      <section className="mx-auto mt-10 w-full max-w-6xl">
+        <div className="grid gap-6 lg:grid-cols-[190px_1fr]">
+          <aside className="rounded-2xl border border-border bg-card p-4">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.25em] text-muted">
+              Tags
+            </p>
+            <div className="mt-3 flex flex-wrap gap-2 lg:flex-col lg:items-start">
+              {sidebarTags.map((tag) => (
+                <Link
+                  key={tag}
+                  href={`/tags/${encodeURIComponent(tag)}`}
+                  className="rounded-full border border-border bg-white px-3 py-1 text-[11px] font-semibold text-muted hover:border-accent/40"
+                >
+                  {tagLabel(tag)}
+                </Link>
+              ))}
+            </div>
+          </aside>
 
-      {popularTags.length > 0 ? (
-        <section className="mx-auto mt-8 w-full max-w-6xl rounded-[28px] border border-border bg-card px-4 py-4 sm:px-6">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xs font-semibold uppercase tracking-[0.25em] text-muted">
-              Trending Tags
-            </h2>
-            <Link href="/tags" className="text-xs font-semibold text-accent">
-              もっと見る →
-            </Link>
-          </div>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {popularTags.slice(0, 10).map((tag) => (
-              <Link
-                key={tag}
-                href={`/tags/${tag}`}
-                className="rounded-full border border-border bg-white px-3 py-1 text-[11px] font-semibold text-muted hover:border-accent/40"
-              >
-                #{tagLabel(tag)}
-              </Link>
-            ))}
-          </div>
-        </section>
-      ) : null}
-
-      {popularActresses.length > 0 ? (
-        <section className="mx-auto mt-8 w-full max-w-6xl rounded-[32px] border border-border bg-card p-6">
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-muted">
-              Popular Actresses
-            </h2>
-            <Link href="/actresses" className="text-xs font-semibold text-accent">
-              女優一覧へ →
-            </Link>
-          </div>
-          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            {popularActresses.map((actress) => (
-              <Link
-                key={actress.slug}
-                href={`/actresses/${actress.slug}`}
-                className="group overflow-hidden rounded-2xl border border-border bg-white transition hover:-translate-y-1 hover:border-accent/40"
-              >
-                <div className="relative h-24 overflow-hidden bg-accent-soft">
-                {actress.image ? (
-                    <img
-                      src={actress.image}
-                      alt={actress.slug}
-                      loading="lazy"
-                      decoding="async"
-                      className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
-                    />
-                  ) : (
-                    <div className="flex h-full items-center justify-center text-[10px] font-semibold uppercase tracking-[0.25em] text-accent">
-                      Actress
+          <div className="space-y-10">
+            <section className="rounded-[28px] border border-border bg-card p-6 shadow-[0_30px_70px_-45px_rgba(0,0,0,0.35)]">
+              <div className="flex items-center justify-between">
+                <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-muted">
+                  本日のおすすめ動画
+                </h2>
+                <Link href="/works" className="text-xs font-semibold text-accent">
+                  もっと見る →
+                </Link>
+              </div>
+              <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {recommendedWorks.map((work) => (
+                  <Link
+                    key={work.id}
+                    href={`/works/${work.slug}`}
+                    className="group relative overflow-hidden rounded-2xl border border-border bg-white"
+                  >
+                    <div className="relative aspect-[4/3] w-full">
+                      {work.images[0]?.url ? (
+                        <img
+                          src={work.images[0].url}
+                          alt={work.images[0].alt}
+                          loading="lazy"
+                          decoding="async"
+                          className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-[1.04]"
+                        />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center bg-accent-soft text-xs text-accent">
+                          No Image
+                        </div>
+                      )}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent opacity-90" />
+                      <div className="absolute bottom-3 left-3 right-3">
+                        <p className="text-[10px] uppercase tracking-[0.2em] text-white/70">
+                          {work.slug}
+                        </p>
+                        <p className="mt-1 text-sm font-semibold text-white line-clamp-2">
+                          {work.title}
+                        </p>
+                      </div>
                     </div>
-                  )}
-                </div>
-                <div className="p-4">
-                  <p className="text-sm font-semibold">{actress.slug}</p>
-                  <p className="mt-1 text-xs text-muted">関連 {actress.count} 作品</p>
-                </div>
-              </Link>
-            ))}
-          </div>
-          <div className="mt-4 flex justify-end">
-            <Link href="/actresses/ranking" className="text-xs font-semibold text-accent">
-              ランキングを見る →
-            </Link>
-          </div>
-        </section>
-      ) : null}
+                  </Link>
+                ))}
+              </div>
+            </section>
 
-      <section className="mx-auto mt-10 w-full max-w-6xl rounded-[32px] border border-border bg-card p-6 shadow-[0_30px_70px_-45px_rgba(0,0,0,0.35)]">
-        <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-muted">
-            New Works
-          </h2>
-          <Link href="/works" className="text-xs font-semibold text-accent">
-            一覧へ →
-          </Link>
-        </div>
-        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {visualWorks.map((work) => (
-            <Link
-              key={work.id}
-              href={`/works/${work.slug}`}
-              className="group relative overflow-hidden rounded-3xl border border-border bg-white"
-            >
-              <div className="relative aspect-[16/9] w-full">
-                {work.images[0]?.url ? (
-                  <img
-                    src={work.images[0].url}
-                    alt={work.images[0].alt}
-                    loading="lazy"
-                    decoding="async"
-                    className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-[1.04]"
-                  />
-                ) : (
-                  <div className="flex h-full w-full items-center justify-center bg-accent-soft text-xs text-accent">
-                    No Image
+            <section className="rounded-[28px] border border-border bg-card p-6">
+              <div className="flex items-center justify-between">
+                <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-muted">
+                  作品ランキング
+                </h2>
+                <Link href="/works/ranking" className="text-xs font-semibold text-accent">
+                  一覧へ →
+                </Link>
+              </div>
+              <div className="mt-4 grid gap-4 lg:grid-cols-3">
+                {[
+                  { title: "日", items: dailyRanking },
+                  { title: "週", items: weeklyRanking },
+                  { title: "月", items: monthlyRanking },
+                ].map((group) => (
+                  <div key={group.title} className="rounded-2xl border border-border bg-white p-3">
+                    <p className="text-xs font-semibold text-muted">{group.title}ランキング</p>
+                    <div className="mt-3 grid gap-3">
+                      {group.items.map((work, index) => (
+                        <Link
+                          key={work.id}
+                          href={`/works/${work.slug}`}
+                          className="group flex gap-3 rounded-xl border border-border bg-card p-2 hover:border-accent/40"
+                        >
+                          <div className="relative h-16 w-24 overflow-hidden rounded-lg bg-accent-soft">
+                            {work.images[0]?.url ? (
+                              <img
+                                src={work.images[0].url}
+                                alt={work.images[0].alt}
+                                loading="lazy"
+                                decoding="async"
+                                className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-[1.04]"
+                              />
+                            ) : (
+                              <div className="flex h-full items-center justify-center text-[10px] text-accent">
+                                No Image
+                              </div>
+                            )}
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-[11px] text-muted">#{index + 1}</p>
+                            <p className="text-sm font-semibold line-clamp-2">{work.title}</p>
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
                   </div>
-                )}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent opacity-90" />
-                <div className="absolute bottom-3 left-3 right-3">
-                  <p className="text-[10px] uppercase tracking-[0.2em] text-white/70">
-                    {work.slug}
-                  </p>
-                  <p className="mt-1 text-sm font-semibold text-white line-clamp-2">
-                    {work.title}
-                  </p>
-                </div>
+                ))}
               </div>
-            </Link>
-          ))}
-        </div>
-        {(miniRankingLines.length > 0 || popularActresses.length > 0 || popularGenres.length > 0 || popularTags.length > 0) ? (
-          <div className="mt-5 grid gap-3 rounded-3xl border border-border bg-white p-3 sm:grid-cols-2 lg:grid-cols-3">
-            {miniRankingLines.length > 0 ? (
-              <div className="rounded-2xl border border-border bg-card/70 p-3">
-                <div className="flex items-center justify-between">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted">
-                    Ranking
-                  </p>
-                  {rankingTopics[0] ? (
-                    <Link
-                      href={`/topics/${rankingTopics[0].slug}`}
-                      className="text-[10px] font-semibold text-accent"
-                    >
-                      詳細 →
-                    </Link>
-                  ) : null}
-                </div>
-                <div className="mt-2 grid gap-1 text-xs text-muted">
-                  {miniRankingLines.map((line) => (
-                    <span key={line}>{line}</span>
-                  ))}
-                </div>
-              </div>
-            ) : null}
+            </section>
+
             {popularActresses.length > 0 ? (
-              <div className="rounded-2xl border border-border bg-card/70 p-3 sm:col-span-2">
+              <section className="rounded-[28px] border border-border bg-card p-6">
                 <div className="flex items-center justify-between">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted">
-                    Actresses
-                  </p>
-                  <Link href="/actresses/ranking" className="text-[10px] font-semibold text-accent">
-                    ランキング →
+                  <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-muted">
+                    女優ランキング
+                  </h2>
+                  <Link href="/actresses/ranking" className="text-xs font-semibold text-accent">
+                    一覧へ →
                   </Link>
                 </div>
-                <div className="mt-2 grid gap-1 text-xs text-muted sm:grid-cols-2">
-                  {popularActresses.slice(0, 10).map((actress, index) => (
+                <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                  {popularActresses.map((actress) => (
                     <Link
                       key={actress.slug}
                       href={`/actresses/${actress.slug}`}
-                      className="truncate hover:text-foreground"
+                      className="group overflow-hidden rounded-2xl border border-border bg-white transition hover:-translate-y-1 hover:border-accent/40"
                     >
-                      {index + 1}. {actress.slug}
+                      <div className="relative h-24 overflow-hidden bg-accent-soft">
+                        {actress.image ? (
+                          <img
+                            src={actress.image}
+                            alt={actress.slug}
+                            loading="lazy"
+                            decoding="async"
+                            className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
+                          />
+                        ) : (
+                          <div className="flex h-full items-center justify-center text-[10px] font-semibold uppercase tracking-[0.25em] text-accent">
+                            Actress
+                          </div>
+                        )}
+                      </div>
+                      <div className="p-4">
+                        <p className="text-sm font-semibold">{actress.slug}</p>
+                        <p className="mt-1 text-xs text-muted">関連 {actress.count} 作品</p>
+                      </div>
                     </Link>
                   ))}
                 </div>
-              </div>
+              </section>
             ) : null}
-            {popularGenres.length > 0 ? (
-              <div className="rounded-2xl border border-border bg-card/70 p-3">
+
+            {upcomingWorks.length > 0 ? (
+              <section className="rounded-[28px] border border-border bg-card p-6">
                 <div className="flex items-center justify-between">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted">
-                    Genres
-                  </p>
-                  <Link href="/genres" className="text-[10px] font-semibold text-accent">
-                    一覧 →
+                  <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-muted">
+                    予約作品
+                  </h2>
+                  <Link href="/works" className="text-xs font-semibold text-accent">
+                    一覧へ →
                   </Link>
                 </div>
-                <div className="mt-2 grid gap-1 text-xs text-muted">
-                  {popularGenres.slice(0, 5).map((tag, index) => (
+                <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                  {upcomingWorks.slice(0, 8).map((work) => (
                     <Link
-                      key={tag}
-                      href={`/tags/${encodeURIComponent(tag)}`}
-                      className="truncate hover:text-foreground"
+                      key={work.id}
+                      href={`/works/${work.slug}`}
+                      className="group relative overflow-hidden rounded-2xl border border-border bg-white"
                     >
-                      {index + 1}. {tagLabel(tag)}
+                      <div className="relative aspect-[4/3] w-full">
+                        {work.images[0]?.url ? (
+                          <img
+                            src={work.images[0].url}
+                            alt={work.images[0].alt}
+                            loading="lazy"
+                            decoding="async"
+                            className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-[1.04]"
+                          />
+                        ) : (
+                          <div className="flex h-full w-full items-center justify-center bg-accent-soft text-xs text-accent">
+                            No Image
+                          </div>
+                        )}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent opacity-90" />
+                        <div className="absolute bottom-3 left-3 right-3">
+                          <p className="text-[10px] uppercase tracking-[0.2em] text-white/70">
+                            予約
+                          </p>
+                          <p className="mt-1 text-sm font-semibold text-white line-clamp-2">
+                            {work.title}
+                          </p>
+                        </div>
+                      </div>
                     </Link>
                   ))}
                 </div>
-              </div>
+              </section>
             ) : null}
-            {popularTags.length > 0 ? (
-              <div className="rounded-2xl border border-border bg-card/70 p-3">
-                <div className="flex items-center justify-between">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted">
-                    Tags
-                  </p>
-                  <Link href="/tags" className="text-[10px] font-semibold text-accent">
-                    一覧 →
-                  </Link>
-                </div>
-                <div className="mt-2 grid gap-1 text-xs text-muted">
-                  {popularTags.slice(0, 5).map((tag, index) => (
-                    <Link
-                      key={tag}
-                      href={`/tags/${tag}`}
-                      className="truncate hover:text-foreground"
-                    >
-                      {index + 1}. #{tagLabel(tag)}
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            ) : null}
-          </div>
-        ) : null}
-      </section>
 
-      <section className="mx-auto mt-10 w-full max-w-6xl rounded-[32px] border border-border bg-card p-6">
-        <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-muted">
-            Topics
-          </h2>
-          <Link href="/topics" className="text-xs font-semibold text-accent">
-            一覧へ →
-          </Link>
-        </div>
-        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {dailyTopics.slice(0, 6).map((topic) => (
-            <Link
-              key={topic.id}
-              href={`/topics/${topic.slug}`}
-              className="group overflow-hidden rounded-3xl border border-border bg-white transition hover:-translate-y-1 hover:border-accent/40"
-            >
-              <div className="relative h-28 overflow-hidden bg-accent-soft">
-                {getTopicCover(topic) ? (
-                    <img
-                      src={getTopicCover(topic) ?? ""}
-                      alt={topic.title}
-                      loading="lazy"
-                      decoding="async"
-                      className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
-                    />
-                ) : (
-                  <div className="flex h-full items-center justify-center text-[10px] font-semibold uppercase tracking-[0.25em] text-accent">
-                    Topic
-                  </div>
-                )}
-              </div>
-              <div className="p-4">
-                <p className="text-[10px] uppercase tracking-[0.2em] text-muted">
-                  {formatDate(topic.published_at)}
-                </p>
-                <p className="mt-2 text-sm font-semibold">{topic.title}</p>
-                <p className="mt-2 text-xs text-muted line-clamp-2">{topic.summary}</p>
-              </div>
-            </Link>
-          ))}
-        </div>
-      </section>
-
-      {(summaryTopics.length > 0 || rankingTopics.length > 0) ? (
-        <section className="mx-auto mt-8 w-full max-w-6xl grid gap-3 sm:grid-cols-2">
-          {summaryTopics.map((topic) => (
-            <Link
-              key={topic.id}
-              href={`/topics/${topic.slug}`}
-              className="group overflow-hidden rounded-3xl border border-border bg-card transition hover:-translate-y-1 hover:border-accent/40"
-            >
-              <div className="relative h-28 overflow-hidden bg-accent-soft">
-                {getTopicCover(topic) ? (
-                  <img
-                    src={getTopicCover(topic) ?? ""}
-                    alt={topic.title}
-                    loading="lazy"
-                    decoding="async"
-                    className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
-                  />
-                ) : (
-                  <div className="flex h-full items-center justify-center text-[10px] font-semibold uppercase tracking-[0.25em] text-accent">
-                    Summary
-                  </div>
-                )}
-              </div>
-              <div className="p-4">
-                <p className="text-xs font-semibold text-muted">まとめ</p>
-                <p className="mt-1 text-sm font-semibold">{topic.title}</p>
-              </div>
-            </Link>
-          ))}
-          {rankingTopics.map((topic) => (
-            <Link
-              key={topic.id}
-              href={`/topics/${topic.slug}`}
-              className="group overflow-hidden rounded-3xl border border-border bg-card transition hover:-translate-y-1 hover:border-accent/40"
-            >
-              <div className="relative h-28 overflow-hidden bg-accent-soft">
-                {getTopicCover(topic) ? (
-                  <img
-                    src={getTopicCover(topic) ?? ""}
-                    alt={topic.title}
-                    loading="lazy"
-                    decoding="async"
-                    className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
-                  />
-                ) : (
-                  <div className="flex h-full items-center justify-center text-[10px] font-semibold uppercase tracking-[0.25em] text-accent">
-                    Ranking
-                  </div>
-                )}
-              </div>
-              <div className="p-4">
-                <p className="text-xs font-semibold text-muted">ランキング</p>
-                <p className="mt-1 text-sm font-semibold">{topic.title}</p>
-              </div>
-            </Link>
-          ))}
-        </section>
-      ) : null}
-
-      <section className="mx-auto mt-12 w-full max-w-6xl">
-        <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-muted">
-            Latest
-          </h2>
-          <span className="text-xs text-muted">最新100件</span>
-        </div>
-        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {visualArticles.map((article) => {
-            const cover = article.type === "work" ? article.images?.[0]?.url : null;
-            return (
-              <Link
-                key={article.id}
-                href={`/${article.type === "work" ? "works" : article.type === "actress" ? "actresses" : "topics"}/${article.slug}`}
-                className="group relative overflow-hidden rounded-3xl border border-border bg-white"
-              >
-                {cover ? (
-                  <img
-                    src={cover}
-                    alt={article.title}
-                    loading="lazy"
-                    decoding="async"
-                    className="h-36 w-full object-cover transition duration-500 group-hover:scale-[1.04]"
-                  />
-                ) : (
-                  <div className="flex h-36 items-center justify-center bg-accent-soft text-xs text-accent">
-                    {article.type.toUpperCase()}
-                  </div>
-                )}
-                <div className="p-4">
-                  <p className="text-[10px] uppercase tracking-[0.2em] text-muted">
-                    {article.type}
-                  </p>
-                  <p className="mt-2 text-sm font-semibold line-clamp-2">{article.title}</p>
-                </div>
-              </Link>
-            );
-          })}
-        </div>
-        <div className="mt-4 flex items-center justify-between text-xs text-muted">
-          <span>
-            {latest.length}件中 {start + 1}-{Math.min(start + perPage, latest.length)}件
-          </span>
-          <div className="flex gap-2">
-            {safePage > 1 ? (
-              <Link
-                href={`/?page=${safePage - 1}`}
-                className="rounded-full border border-border bg-white px-3 py-1 hover:border-accent/40"
-              >
-                前へ
-              </Link>
-            ) : null}
-            {buildPagination(safePage, totalPages).map((pageNum, index) =>
-              pageNum === "..." ? (
-                <span key={`ellipsis-${index}`} className="px-2 text-muted">
-                  ...
-                </span>
-              ) : (
-                <Link
-                  key={pageNum}
-                  href={`/?page=${pageNum}`}
-                  className={`rounded-full px-3 py-1 ${
-                    pageNum === safePage
-                      ? "bg-accent text-white"
-                      : "border border-border bg-white hover:border-accent/40"
-                  }`}
-                >
-                  {pageNum}
+            <section className="rounded-[28px] border border-border bg-card p-6">
+              <div className="flex items-center justify-between">
+                <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-muted">
+                  新着作品
+                </h2>
+                <Link href="/works" className="text-xs font-semibold text-accent">
+                  一覧へ →
                 </Link>
-              )
-            )}
-            {safePage < totalPages ? (
-              <Link
-                href={`/?page=${safePage + 1}`}
-                className="rounded-full border border-border bg-white px-3 py-1 hover:border-accent/40"
-              >
-                次へ
-              </Link>
+              </div>
+              <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                {visualWorks.map((work) => (
+                  <Link
+                    key={work.id}
+                    href={`/works/${work.slug}`}
+                    className="group relative overflow-hidden rounded-2xl border border-border bg-white"
+                  >
+                    <div className="relative aspect-[4/3] w-full">
+                      {work.images[0]?.url ? (
+                        <img
+                          src={work.images[0].url}
+                          alt={work.images[0].alt}
+                          loading="lazy"
+                          decoding="async"
+                          className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-[1.04]"
+                        />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center bg-accent-soft text-xs text-accent">
+                          No Image
+                        </div>
+                      )}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent opacity-90" />
+                      <div className="absolute bottom-3 left-3 right-3">
+                        <p className="text-[10px] uppercase tracking-[0.2em] text-white/70">
+                          {work.slug}
+                        </p>
+                        <p className="mt-1 text-sm font-semibold text-white line-clamp-2">
+                          {work.title}
+                        </p>
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </section>
+
+            {(summaryTopics.length > 0 || rankingTopics.length > 0) ? (
+              <section className="grid gap-3 sm:grid-cols-2">
+                {summaryTopics.map((topic) => (
+                  <Link
+                    key={topic.id}
+                    href={`/topics/${topic.slug}`}
+                    className="group overflow-hidden rounded-2xl border border-border bg-card transition hover:-translate-y-1 hover:border-accent/40"
+                  >
+                    <div className="relative h-28 overflow-hidden bg-accent-soft">
+                      {getTopicCover(topic) ? (
+                        <img
+                          src={getTopicCover(topic) ?? ""}
+                          alt={topic.title}
+                          loading="lazy"
+                          decoding="async"
+                          className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
+                        />
+                      ) : (
+                        <div className="flex h-full items-center justify-center text-[10px] font-semibold uppercase tracking-[0.25em] text-accent">
+                          Summary
+                        </div>
+                      )}
+                    </div>
+                    <div className="p-4">
+                      <p className="text-xs font-semibold text-muted">まとめ</p>
+                      <p className="mt-1 text-sm font-semibold">{topic.title}</p>
+                    </div>
+                  </Link>
+                ))}
+                {rankingTopics.map((topic) => (
+                  <Link
+                    key={topic.id}
+                    href={`/topics/${topic.slug}`}
+                    className="group overflow-hidden rounded-2xl border border-border bg-card transition hover:-translate-y-1 hover:border-accent/40"
+                  >
+                    <div className="relative h-28 overflow-hidden bg-accent-soft">
+                      {getTopicCover(topic) ? (
+                        <img
+                          src={getTopicCover(topic) ?? ""}
+                          alt={topic.title}
+                          loading="lazy"
+                          decoding="async"
+                          className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
+                        />
+                      ) : (
+                        <div className="flex h-full items-center justify-center text-[10px] font-semibold uppercase tracking-[0.25em] text-accent">
+                          Ranking
+                        </div>
+                      )}
+                    </div>
+                    <div className="p-4">
+                      <p className="text-xs font-semibold text-muted">ランキング</p>
+                      <p className="mt-1 text-sm font-semibold">{topic.title}</p>
+                    </div>
+                  </Link>
+                ))}
+              </section>
             ) : null}
+
+            <section>
+              <div className="flex items-center justify-between">
+                <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-muted">
+                  Latest
+                </h2>
+                <span className="text-xs text-muted">最新100件</span>
+              </div>
+              <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                {visualArticles.map((article) => {
+                  const cover = article.type === "work" ? article.images?.[0]?.url : null;
+                  return (
+                    <Link
+                      key={article.id}
+                      href={`/${article.type === "work" ? "works" : article.type === "actress" ? "actresses" : "topics"}/${article.slug}`}
+                      className="group relative overflow-hidden rounded-2xl border border-border bg-white"
+                    >
+                      {cover ? (
+                        <img
+                          src={cover}
+                          alt={article.title}
+                          loading="lazy"
+                          decoding="async"
+                          className="h-32 w-full object-cover transition duration-500 group-hover:scale-[1.04]"
+                        />
+                      ) : (
+                        <div className="flex h-32 items-center justify-center bg-accent-soft text-xs text-accent">
+                          {article.type.toUpperCase()}
+                        </div>
+                      )}
+                      <div className="p-4">
+                        <p className="text-[10px] uppercase tracking-[0.2em] text-muted">
+                          {article.type}
+                        </p>
+                        <p className="mt-2 text-sm font-semibold line-clamp-2">{article.title}</p>
+                      </div>
+                    </Link>
+                  );
+                })}
+              </div>
+              <div className="mt-4 flex items-center justify-between text-xs text-muted">
+                <span>
+                  {latest.length}件中 {start + 1}-{Math.min(start + perPage, latest.length)}件
+                </span>
+                <div className="flex gap-2">
+                  {safePage > 1 ? (
+                    <Link
+                      href={`/?page=${safePage - 1}`}
+                      className="rounded-full border border-border bg-white px-3 py-1 hover:border-accent/40"
+                    >
+                      前へ
+                    </Link>
+                  ) : null}
+                  {buildPagination(safePage, totalPages).map((pageNum, index) =>
+                    pageNum === "..." ? (
+                      <span key={`ellipsis-${index}`} className="px-2 text-muted">
+                        ...
+                      </span>
+                    ) : (
+                      <Link
+                        key={pageNum}
+                        href={`/?page=${pageNum}`}
+                        className={`rounded-full px-3 py-1 ${
+                          pageNum === safePage
+                            ? "bg-accent text-white"
+                            : "border border-border bg-white hover:border-accent/40"
+                        }`}
+                      >
+                        {pageNum}
+                      </Link>
+                    )
+                  )}
+                  {safePage < totalPages ? (
+                    <Link
+                      href={`/?page=${safePage + 1}`}
+                      className="rounded-full border border-border bg-white px-3 py-1 hover:border-accent/40"
+                    >
+                      次へ
+                    </Link>
+                  ) : null}
+                </div>
+              </div>
+            </section>
           </div>
         </div>
       </section>
