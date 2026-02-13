@@ -32,6 +32,34 @@ function formatDate(iso: string) {
   });
 }
 
+function seedFromString(value: string) {
+  let hash = 0;
+  for (let i = 0; i < value.length; i += 1) {
+    hash = (hash * 31 + value.charCodeAt(i)) | 0;
+  }
+  return hash >>> 0;
+}
+
+function seededRandom(seed: number) {
+  let state = seed || 1;
+  return () => {
+    state = (state * 1664525 + 1013904223) >>> 0;
+    return state / 0xffffffff;
+  };
+}
+
+function pickDailyRandom<T>(items: T[], count: number) {
+  if (items.length <= count) return items;
+  const today = new Date().toLocaleDateString("ja-JP", { timeZone: "Asia/Tokyo" });
+  const rand = seededRandom(seedFromString(today));
+  const shuffled = [...items];
+  for (let i = shuffled.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(rand() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled.slice(0, count);
+}
+
  
 export default async function Home({
   searchParams,
@@ -75,7 +103,8 @@ export default async function Home({
       latestWorks.find((work) => work.related_actresses.includes(row.actress))?.images?.[0]?.url ??
       null,
   }));
-  const heroWorks = latestWorks.filter((work) => work.images[0]?.url).slice(0, 9);
+  const heroCandidates = latestWorks.filter((work) => work.images[0]?.url);
+  const heroWorks = pickDailyRandom(heroCandidates, 9);
   const visualWorks = latestWorks.slice(0, 12);
   const visualArticles = latestPage.slice(0, 12);
   const miniRankingLines = rankingTopics[0]?.body
