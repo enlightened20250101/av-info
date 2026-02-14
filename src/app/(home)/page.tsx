@@ -56,11 +56,13 @@ function getJstNow() {
 
 function parsePublishedAt(iso: string) {
   if (!iso) return null;
-  if (/^\d{4}[-/]\d{2}[-/]\d{2}$/.test(iso)) {
-    const normalized = iso.replace(/\//g, "-");
+  const trimmed = iso.trim();
+  if (/^\d{4}[-/]\d{2}[-/]\d{2}$/.test(trimmed)) {
+    const normalized = trimmed.replace(/\//g, "-");
     return new Date(`${normalized}T00:00:00+09:00`);
   }
-  const parsed = new Date(iso);
+  const normalized = trimmed.replace(/\//g, "-").replace(" ", "T");
+  const parsed = new Date(normalized);
   return Number.isNaN(parsed.getTime()) ? null : parsed;
 }
 
@@ -78,9 +80,13 @@ function isAvailable(iso: string, now: Date) {
 
 function getWorkReleaseDateFromBody(body: string | null | undefined) {
   if (!body) return null;
-  const match = body.match(/^配信日:\s*(\d{4}[-/]\d{2}[-/]\d{2})/m);
+  const match = body.match(
+    /^配信日:\s*(\d{4}[-/]\d{2}[-/]\d{2})(?:\s+(\d{2}:\d{2}:\d{2}))?/m
+  );
   if (!match) return null;
-  return parsePublishedAt(match[1]);
+  const datePart = match[1];
+  const timePart = match[2] ? ` ${match[2]}` : "";
+  return parsePublishedAt(`${datePart}${timePart}`);
 }
 
 function isUpcomingWork(work: { published_at: string; body: string | null | undefined }, now: Date) {
