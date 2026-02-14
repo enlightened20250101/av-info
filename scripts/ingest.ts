@@ -3,15 +3,11 @@ import fs from "fs";
 import path from "path";
 import { google } from "googleapis";
 import { fetchFanzaWorks } from "@/fetchers/fetch_fanza_works";
-import { fetchDailyTopics } from "@/fetchers/fetch_daily_topics";
 import { fetchRankings } from "@/fetchers/fetch_rankings";
 import { fetchSummaries } from "@/fetchers/fetch_summaries";
-import { fetchRssTopics } from "@/fetchers/fetch_rss_topics";
 import { normalizeFanzaWork } from "@/normalizers/normalize_work";
-import { normalizeTopic } from "@/normalizers/normalize_topic";
 import { normalizeRanking } from "@/normalizers/normalize_ranking";
 import { normalizeSummary } from "@/normalizers/normalize_summary";
-import { normalizeRssTopic } from "@/normalizers/normalize_rss_topic";
 import { extractTags, pickRelatedWorks, tagLabel, tagSummary } from "@/lib/tagging";
 import {
   findWorksByActressSlug,
@@ -278,27 +274,7 @@ async function ingestFanzaWorks(options: FanzaIngestOptions = {}) {
   return { upserted, skipped, fetched: total };
 }
 
-async function ingestDailyTopics() {
-  const raws = fetchDailyTopics();
-  const total = raws.length;
-
-  let upserted = 0;
-  for (let index = 0; index < raws.length; index += 1) {
-    const raw = raws[index];
-    const publishedAt = schedulePublishedAt(index, total);
-    const article = normalizeTopic(raw, publishedAt);
-    const linkSource = `${article.title} ${article.summary}`;
-    const { relatedWorks, relatedActresses, tags } = await buildTopicLinks(linkSource);
-    article.related_works = relatedWorks;
-    article.related_actresses = relatedActresses;
-    article.body = appendTagSummary(article.body, tags);
-    const result = await upsertArticle(article);
-    logLine(`Topic ${article.slug}: ${result.status}`);
-    upserted += 1;
-  }
-
-  return { upserted, fetched: total };
-}
+// Topics ingest disabled by request.
 
 async function ingestRankings() {
   const raws = await fetchRankings();
@@ -344,27 +320,7 @@ async function ingestSummaries() {
   return { upserted, fetched: total };
 }
 
-async function ingestRssTopics() {
-  const raws = await fetchRssTopics();
-  const total = raws.length;
-
-  let upserted = 0;
-  for (let index = 0; index < raws.length; index += 1) {
-    const raw = raws[index];
-    const publishedAt = raw.published_at ? new Date(raw.published_at) : schedulePublishedAt(index, total);
-    const article = normalizeRssTopic(raw, publishedAt);
-    const linkSource = `${article.title} ${article.summary}`;
-    const { relatedWorks, relatedActresses, tags } = await buildTopicLinks(linkSource);
-    article.related_works = relatedWorks;
-    article.related_actresses = relatedActresses;
-    article.body = appendTagSummary(article.body, tags);
-    const result = await upsertArticle(article);
-    logLine(`RSS ${article.slug}: ${result.status}`);
-    upserted += 1;
-  }
-
-  return { upserted, fetched: total };
-}
+// RSS topics ingest disabled by request.
 
 async function ingestGsheetEmbeds() {
   const spreadsheetId = process.env.GSHEETS_SPREADSHEET_ID;
@@ -521,9 +477,7 @@ async function run() {
   const tasks = [
     { name: "gsheet", run: ingestGsheetEmbeds },
     { name: "summaries", run: ingestSummaries },
-    { name: "topics", run: ingestDailyTopics },
     { name: "rankings", run: ingestRankings },
-    { name: "rss", run: ingestRssTopics },
     { name: "fanza", run: ingestFanzaWorks },
   ];
 

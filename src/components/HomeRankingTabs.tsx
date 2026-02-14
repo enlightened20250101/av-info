@@ -10,12 +10,12 @@ type RankingItem = {
   images: { url: string; alt?: string }[];
 };
 
-type RankingGroup = \"daily\" | \"weekly\" | \"monthly\";
+type RankingGroup = "daily" | "weekly" | "monthly";
 
 const labels: Record<RankingGroup, string> = {
-  daily: \"日\",
-  weekly: \"週\",
-  monthly: \"月\",
+  daily: "日",
+  weekly: "週",
+  monthly: "月",
 };
 
 export default function HomeRankingTabs({
