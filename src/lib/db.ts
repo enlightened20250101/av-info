@@ -240,6 +240,27 @@ export async function getLatestByType(type: ArticleType, limit = 10) {
   return (data ?? []).map((row) => normalizeArticle(row as Article));
 }
 
+export async function getLatestByTypeBefore(
+  type: ArticleType,
+  beforeIso: string,
+  limit = 10
+) {
+  const client = getSupabase();
+  const { data, error } = await client
+    .from("articles")
+    .select("*")
+    .eq("type", type)
+    .lte("published_at", beforeIso)
+    .order("published_at", { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    throw error;
+  }
+
+  return (data ?? []).map((row) => normalizeArticle(row as Article));
+}
+
 export async function getLatestByTypePage(
   type: ArticleType,
   page = 1,
