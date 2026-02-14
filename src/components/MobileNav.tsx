@@ -43,7 +43,7 @@ export default function MobileNav() {
   return (
     <>
       <div className="fixed inset-x-0 top-0 z-40 lg:hidden">
-        <div className="mx-auto flex w-full max-w-6xl items-center justify-between border-b border-border bg-white/90 px-4 py-3 backdrop-blur">
+        <div className="mx-auto flex w-full max-w-6xl items-center justify-between border-b border-border bg-white/90 px-4 py-2 backdrop-blur">
           <Link href="/" className="text-xs font-semibold tracking-[0.25em] text-muted">
             ONA INFO
           </Link>
@@ -60,7 +60,7 @@ export default function MobileNav() {
           </button>
         </div>
       </div>
-      <div className="h-[56px] lg:hidden" />
+      <div className="h-[48px] lg:hidden" />
 
       <div
         className={`fixed inset-0 z-50 transition-opacity duration-300 lg:hidden ${
