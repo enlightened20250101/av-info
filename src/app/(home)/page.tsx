@@ -161,7 +161,7 @@ export default async function Home({
   );
   const recommendedWorks = pickDailyRandom(recommendedCandidates, 9);
   const dailyPool = availableWorks.filter(
-    (work) => new Date(work.published_at).getTime() >= now.getTime() - 24 * 60 * 60 * 1000
+    (work) => new Date(work.published_at).getTime() >= now.getTime() - 48 * 60 * 60 * 1000
   );
   const weeklyPool = availableWorks.filter(
     (work) => new Date(work.published_at).getTime() >= now.getTime() - 7 * 24 * 60 * 60 * 1000
@@ -255,7 +255,7 @@ export default async function Home({
       </header>
 
       <section className="mx-auto mt-6 w-full max-w-6xl">
-        <div className="sticky top-0 z-30 -mx-6 bg-background/95 px-6 py-3 backdrop-blur lg:hidden">
+        <div className="sticky top-0 z-30 -mx-6 bg-background/95 px-6 py-3 backdrop-blur">
           <div className="flex items-center justify-between">
             <p className="text-[11px] font-semibold uppercase tracking-[0.25em] text-muted">
               Tags
