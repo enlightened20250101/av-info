@@ -34,6 +34,9 @@ function parsePublishedAt(iso: string) {
   let normalized = trimmed.replace(/\//g, "-").replace(" ", "T");
   normalized = normalized.replace(/([+-]\d{2})(\d{2})$/, "$1:$2");
   normalized = normalized.replace(/([+-]\d{2})$/, "$1:00");
+  normalized = normalized.replace(/\+00:00$/, "Z");
+  normalized = normalized.replace(/\+0000$/, "Z");
+  normalized = normalized.replace(/\+00$/, "Z");
   const parsed = new Date(normalized);
   return Number.isNaN(parsed.getTime()) ? null : parsed;
 }
