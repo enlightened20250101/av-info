@@ -227,11 +227,23 @@ async function ingestFanzaWorks(options: FanzaIngestOptions = {}) {
   });
   const total = raws.length;
 
+  const parseReleaseDate = (value?: string | null) => {
+    if (!value) return null;
+    const trimmed = String(value).trim();
+    if (!trimmed) return null;
+    if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+      return new Date(`${trimmed}T00:00:00+09:00`);
+    }
+    const parsed = new Date(trimmed);
+    if (Number.isNaN(parsed.getTime())) return null;
+    return parsed;
+  };
+
   let upserted = 0;
   let skipped = 0;
   for (let index = 0; index < raws.length; index += 1) {
     const raw = raws[index];
-    const publishedAt = schedulePublishedAt(index, total);
+    const publishedAt = parseReleaseDate(raw.release_date) ?? schedulePublishedAt(index, total);
     const article = normalizeFanzaWork(raw, publishedAt);
     if (!article) {
       skipped += 1;
