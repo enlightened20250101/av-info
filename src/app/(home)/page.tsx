@@ -1,12 +1,10 @@
 import Link from "next/link";
 import { Metadata } from "next";
-import { tagLabel } from "@/lib/tagging";
 import {
   getActressRanking,
   getActressCovers,
   getLatestArticles,
   getLatestByType,
-  getTopTags,
 } from "@/lib/db";
 import { buildPagination } from "@/lib/pagination";
 import HomeRankingTabs from "@/components/HomeRankingTabs";
@@ -118,43 +116,6 @@ export default async function Home({
 
   const latestWorks = await getLatestByType("work", 120);
 
-  const popularTags = (await getTopTags(12)).map((row) => row.tag);
-  const fixedTags = [
-    "素人",
-    "巨乳",
-    "処女",
-    "美少女",
-    "OL",
-    "看護師・ナース",
-    "女教師",
-    "人妻",
-    "熟女",
-    "水着",
-    "制服",
-    "女子大生",
-    "ハメ撮り",
-    "中出し",
-    "痴漢",
-    "寝取られ",
-    "VR",
-    "ドキュメンタリー",
-    "潮吹き",
-    "巨尻",
-    "清楚",
-    "ギャル",
-    "美乳",
-    "巨根",
-    "拘束",
-    "SM",
-    "3P",
-    "人妻・主婦",
-    "スレンダー",
-    "着エロ",
-  ];
-  const sidebarTags = [
-    ...fixedTags,
-    ...popularTags.filter((tag) => !fixedTags.includes(tag)).slice(0, 8),
-  ];
   const topActresses = await getActressRanking(8);
   const actressSlugs = topActresses.map((row) => row.actress);
   const actressCoverMap = await getActressCovers(actressSlugs);
@@ -199,28 +160,6 @@ export default async function Home({
 
   return (
     <div className="min-h-screen px-6 pb-16 pt-10 sm:px-10">
-      <div className="sticky top-[48px] z-30 -mx-6 bg-background/95 px-6 py-3 backdrop-blur lg:hidden">
-        <div className="flex items-center justify-between">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.25em] text-muted">
-            Tags
-          </p>
-          <Link href="/tags" className="text-[11px] font-semibold text-accent">
-            一覧 →
-          </Link>
-        </div>
-        <div className="mt-2 flex flex-nowrap gap-2 overflow-x-auto pb-1">
-          {sidebarTags.map((tag) => (
-            <Link
-              key={tag}
-              href={`/tags/${encodeURIComponent(tag)}`}
-              className="whitespace-nowrap rounded-full border border-border bg-white px-3 py-1 text-[11px] font-semibold text-muted hover:border-accent/40"
-            >
-              {tagLabel(tag)}
-            </Link>
-          ))}
-        </div>
-      </div>
-
       <header className="mx-auto grid w-full max-w-6xl gap-6 lg:grid-cols-[1.2fr_1fr]">
         <div className="relative rounded-[32px] border border-border bg-[linear-gradient(135deg,rgba(255,255,255,0.98),rgba(244,244,244,0.9))] p-6 shadow-[0_35px_80px_-55px_rgba(0,0,0,0.5)] sm:p-8">
           <div className="pointer-events-none absolute inset-0 rounded-[32px] border border-white/60" />
@@ -296,25 +235,7 @@ export default async function Home({
       </header>
 
       <section className="mx-auto mt-6 w-full max-w-6xl">
-        <div className="grid gap-6 lg:grid-cols-[190px_1fr]">
-          <aside className="sticky top-24 hidden h-fit rounded-2xl border border-border bg-card p-4 lg:block">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.25em] text-muted">
-              Tags
-            </p>
-            <div className="mt-3 flex flex-wrap gap-2 lg:flex-col lg:items-start">
-              {sidebarTags.map((tag) => (
-                <Link
-                  key={tag}
-                  href={`/tags/${encodeURIComponent(tag)}`}
-                  className="rounded-full border border-border bg-white px-3 py-1 text-[11px] font-semibold text-muted hover:border-accent/40"
-                >
-                  {tagLabel(tag)}
-                </Link>
-              ))}
-            </div>
-          </aside>
-
-          <div className="space-y-10">
+        <div className="space-y-10">
             <section className="rounded-[28px] border border-border bg-card p-6 shadow-[0_30px_70px_-45px_rgba(0,0,0,0.35)]">
               <div className="flex items-center justify-between">
                 <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-muted">

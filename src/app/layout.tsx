@@ -3,6 +3,8 @@ import { Suspense } from "react";
 import { Space_Grotesk, IBM_Plex_Mono } from "next/font/google";
 import { SITE } from "@/lib/site";
 import MobileNav from "@/components/MobileNav";
+import GlobalTagBar from "@/components/GlobalTagBar";
+import GlobalTagSidebar from "@/components/GlobalTagSidebar";
 import Footer from "@/components/Footer";
 import RouteProgress from "@/components/RouteProgress";
 import "./globals.css";
@@ -64,7 +66,9 @@ export default function RootLayout({
           <RouteProgress />
         </Suspense>
         <MobileNav />
-        {children}
+        <GlobalTagBar />
+        <GlobalTagSidebar />
+        <div className="lg:pl-52">{children}</div>
         <Footer />
         <script
           type="application/ld+json"

@@ -43,10 +43,17 @@ export default function MobileNav() {
   return (
     <>
       <div className="fixed inset-x-0 top-0 z-40 lg:hidden">
-        <div className="mx-auto flex w-full max-w-6xl items-center justify-between border-b border-border bg-white/90 px-4 py-2 backdrop-blur">
+        <div className="mx-auto flex w-full max-w-6xl items-center gap-3 border-b border-border bg-white/90 px-4 py-2 backdrop-blur">
           <Link href="/" className="text-xs font-semibold tracking-[0.25em] text-muted">
             ONA INFO
           </Link>
+          <form action="/search" method="get" className="flex flex-1 items-center">
+            <input
+              name="q"
+              placeholder="検索"
+              className="w-full rounded-full border border-border bg-white px-3 py-2 text-xs"
+            />
+          </form>
           <button
             type="button"
             aria-label="メニューを開く"
