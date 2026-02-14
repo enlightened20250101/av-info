@@ -155,7 +155,7 @@ export default async function Home({
   const start = (safePage - 1) * perPage;
   const latestPage = latest.slice(start, start + perPage);
 
-  const latestWorks = await getLatestByType("work", 120);
+  const latestWorks = await getLatestByType("work", 600);
 
   const topActresses = await getActressRanking(8);
   const actressSlugs = topActresses.map((row) => row.actress);
@@ -171,28 +171,27 @@ export default async function Home({
   const now = getJstNow();
   const availableWorks = latestWorks.filter((work) => isAvailableWork(work, now));
   const upcomingWorks = latestWorks.filter((work) => isUpcomingWork(work, now));
-  const effectiveAvailableWorks = availableWorks.length > 0 ? availableWorks : latestWorks;
-  const heroCandidates = effectiveAvailableWorks.filter((work) => work.images[0]?.url);
-  const heroFallback = heroCandidates.length > 0 ? heroCandidates : effectiveAvailableWorks;
+  const heroCandidates = availableWorks.filter((work) => work.images[0]?.url);
+  const heroFallback = heroCandidates.length > 0 ? heroCandidates : availableWorks;
   const heroWorks = pickDailyRandom(heroFallback, 9);
   const heroSlugs = new Set(heroWorks.map((work) => work.slug));
-  const recommendedCandidates = effectiveAvailableWorks.filter(
+  const recommendedCandidates = availableWorks.filter(
     (work) => work.images[0]?.url && !heroSlugs.has(work.slug)
   );
   const recommendedFallback =
     recommendedCandidates.length > 0
       ? recommendedCandidates
-      : effectiveAvailableWorks.filter((work) => !heroSlugs.has(work.slug));
+      : availableWorks.filter((work) => !heroSlugs.has(work.slug));
   const recommendedWorks = pickDailyRandom(recommendedFallback, 9);
-  const dailyPool = effectiveAvailableWorks.filter((work) => {
+  const dailyPool = availableWorks.filter((work) => {
     const published = parsePublishedAt(work.published_at);
     return published ? published.getTime() >= now.getTime() - 48 * 60 * 60 * 1000 : false;
   });
-  const weeklyPool = effectiveAvailableWorks.filter((work) => {
+  const weeklyPool = availableWorks.filter((work) => {
     const published = parsePublishedAt(work.published_at);
     return published ? published.getTime() >= now.getTime() - 7 * 24 * 60 * 60 * 1000 : false;
   });
-  const monthlyPool = effectiveAvailableWorks.filter((work) => {
+  const monthlyPool = availableWorks.filter((work) => {
     const published = parsePublishedAt(work.published_at);
     return published ? published.getTime() >= now.getTime() - 30 * 24 * 60 * 60 * 1000 : false;
   });
@@ -200,7 +199,7 @@ export default async function Home({
   const dailyRanking = pickRanked(dailyPool, 8, "daily", usedRanking);
   const weeklyRanking = pickRanked(weeklyPool, 8, "weekly", usedRanking);
   const monthlyRanking = pickRanked(monthlyPool, 8, "monthly", usedRanking);
-  const visualWorks = effectiveAvailableWorks.slice(0, 12);
+  const visualWorks = availableWorks.slice(0, 12);
   const filteredLatest = latestPage.filter((article) =>
     article.type !== "work" ? true : isAvailableWork(article, now)
   );
