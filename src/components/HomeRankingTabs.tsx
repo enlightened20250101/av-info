@@ -1,7 +1,7 @@
-\"use client\";
+ "use client";
 
-import Link from \"next/link\";
-import { useMemo, useState } from \"react\";
+import Link from "next/link";
+import { useMemo, useState } from "react";
 
 type RankingItem = {
   id: string;

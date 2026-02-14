@@ -114,6 +114,26 @@ export default async function Home({
     "人妻",
     "熟女",
     "水着",
+    "制服",
+    "女子大生",
+    "ハメ撮り",
+    "中出し",
+    "痴漢",
+    "寝取られ",
+    "VR",
+    "ドキュメンタリー",
+    "潮吹き",
+    "巨尻",
+    "清楚",
+    "ギャル",
+    "美乳",
+    "巨根",
+    "拘束",
+    "SM",
+    "3P",
+    "人妻・主婦",
+    "スレンダー",
+    "着エロ",
   ];
   const sidebarTags = [
     ...fixedTags,
@@ -154,7 +174,9 @@ export default async function Home({
   const weeklyRanking = pickRanked(weeklyPool, 8, "weekly", usedRanking);
   const monthlyRanking = pickRanked(monthlyPool, 8, "monthly", usedRanking);
   const visualWorks = availableWorks.slice(0, 12);
-  const visualArticles = latestPage.slice(0, 12);
+  const visualArticles = latestPage
+    .filter((article) => article.type !== "work" || !isUpcoming(article.published_at, now))
+    .slice(0, 12);
 
   return (
     <div className="min-h-screen px-6 pb-16 pt-10 sm:px-10">
