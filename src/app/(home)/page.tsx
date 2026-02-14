@@ -179,9 +179,10 @@ export default async function Home({
   const weeklyRanking = pickRanked(weeklyPool, 8, "weekly", usedRanking);
   const monthlyRanking = pickRanked(monthlyPool, 8, "monthly", usedRanking);
   const visualWorks = effectiveAvailableWorks.slice(0, 12);
-  const visualArticles = latestPage
-    .filter((article) => article.type !== "work" || isAvailable(article.published_at, now))
-    .slice(0, 12);
+  const filteredLatest = latestPage.filter((article) =>
+    article.type !== "work" ? true : isAvailableWork(article, now)
+  );
+  const visualArticles = (filteredLatest.length > 0 ? filteredLatest : latestPage).slice(0, 12);
 
   return (
     <div className="min-h-screen px-6 pb-16 pt-10 sm:px-10">
