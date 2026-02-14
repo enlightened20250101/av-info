@@ -72,6 +72,15 @@ function parsePublishedAt(iso: string) {
   return Number.isNaN(parsed.getTime()) ? null : parsed;
 }
 
+function normalizeDateText(value: string) {
+  return value
+    .replace(/[０-９]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0xfee0))
+    .replace(/[／]/g, "/")
+    .replace(/[－―]/g, "-")
+    .replace(/[：]/g, ":")
+    .trim();
+}
+
 function isUpcoming(iso: string, now: Date) {
   const parsed = parsePublishedAt(iso);
   if (!parsed) return false;
@@ -86,13 +95,14 @@ function isAvailable(iso: string, now: Date) {
 
 function getWorkReleaseDateFromBody(body: string | null | undefined) {
   if (!body) return null;
-  const match = body.match(
-    /^配信日:\s*(\d{4}[-/]\d{2}[-/]\d{2})(?:\s+(\d{2}:\d{2}:\d{2}))?/m
-  );
+  const match = body.match(/^配信日[:：]\s*([^\n]+)/m);
   if (!match) return null;
-  const datePart = match[1];
-  const timePart = match[2] ? ` ${match[2]}` : "";
-  return parsePublishedAt(`${datePart}${timePart}`);
+  const normalized = normalizeDateText(match[1]);
+  const parts = normalized.split(/\s+/).filter(Boolean);
+  const datePart = parts[0] ?? "";
+  const timePart = parts[1] ?? "";
+  const value = timePart ? `${datePart} ${timePart}` : datePart;
+  return parsePublishedAt(value);
 }
 
 function isUpcomingWork(work: { published_at: string; body: string | null | undefined }, now: Date) {
