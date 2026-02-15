@@ -215,6 +215,7 @@ type FanzaIngestOptions = {
   targetNew?: number;
   offsetStart?: number;
   maxPages?: number;
+  stopWhenTargetReached?: boolean;
 };
 
 async function ingestFanzaWorks(options: FanzaIngestOptions = {}) {
@@ -226,6 +227,7 @@ async function ingestFanzaWorks(options: FanzaIngestOptions = {}) {
     targetNew,
     offsetStart: options.offsetStart,
     maxPages: options.maxPages,
+    stopWhenTargetReached: options.stopWhenTargetReached,
   });
   const total = raws.length;
 
@@ -280,10 +282,11 @@ async function ingestFanzaWorks(options: FanzaIngestOptions = {}) {
     }
 
     const result = await insertArticleIfNew(article);
-    logLine(`FANZA work ${article.slug}: ${result.status}`);
     if (result.status === "inserted") {
       inserted += 1;
+      logLine(`FANZA work ${article.slug}: inserted`);
     }
+    if (inserted >= targetNew) break;
   }
 
   return { inserted, fetched: total };
@@ -447,7 +450,13 @@ async function run() {
     const tasks = [
       {
         name: "fanza",
-        run: () => ingestFanzaWorks({ offsetStart, maxPages, targetNew }),
+        run: () =>
+          ingestFanzaWorks({
+            offsetStart,
+            maxPages,
+            targetNew,
+            stopWhenTargetReached: false,
+          }),
       },
     ];
     const results = await Promise.allSettled(tasks.map((task) => task.run()));

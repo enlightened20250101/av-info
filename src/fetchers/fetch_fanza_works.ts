@@ -9,6 +9,7 @@ type FetchFanzaOptions = {
   targetNew?: number;
   offsetStart?: number;
   maxPages?: number;
+  stopWhenTargetReached?: boolean;
 };
 
 function buildLitevideoEmbedHtml(contentId: string, affiliateId: string, size: string) {
@@ -53,7 +54,12 @@ export async function fetchFanzaWorks(options: FetchFanzaOptions = {}): Promise<
   let offset = Math.max(1, options.offsetStart ?? 1);
   const skipSlugs = options.skipSlugs ?? new Set<string>();
 
-  for (let page = 0; page < maxPages && results.length < targetNew; page += 1) {
+  const stopWhenTargetReached = options.stopWhenTargetReached ?? true;
+  for (
+    let page = 0;
+    page < maxPages && (!stopWhenTargetReached || results.length < targetNew);
+    page += 1
+  ) {
     const params = new URLSearchParams({
       api_id: apiId,
       affiliate_id: affiliateId,
@@ -267,11 +273,11 @@ export async function fetchFanzaWorks(options: FetchFanzaOptions = {}): Promise<
       fetched_at: fetchedAt,
     } satisfies RawFanzaWork);
 
-    if (results.length >= targetNew) break;
+    if (stopWhenTargetReached && results.length >= targetNew) break;
     }
 
     offset += perPage;
   }
 
-  return results.slice(0, targetNew);
+  return stopWhenTargetReached ? results.slice(0, targetNew) : results;
 }
