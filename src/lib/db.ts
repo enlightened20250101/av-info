@@ -209,6 +209,25 @@ export async function upsertArticle(article: Article) {
   throw error;
 }
 
+export async function insertArticleIfNew(article: Article) {
+  const client = getSupabase();
+  const payload = article as Database["public"]["Tables"]["articles"]["Insert"] & Record<string, unknown>;
+  const { data, error } = await client
+    .from("articles")
+    .upsert(payload as never, { onConflict: "slug", ignoreDuplicates: true })
+    .select("id");
+
+  if (error) {
+    throw error;
+  }
+
+  if (!data || data.length === 0) {
+    return { status: "skipped" as const };
+  }
+
+  return { status: "inserted" as const };
+}
+
 export async function getLatestArticles(limit = 30) {
   const client = getSupabase();
   const { data, error } = await client

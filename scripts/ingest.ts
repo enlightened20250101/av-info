@@ -13,6 +13,7 @@ import {
   findWorksByActressSlug,
   getLatestByType,
   getWorkSlugs,
+  insertArticleIfNew,
   refreshActressStats,
   refreshSiteStats,
   upsertArticle,
@@ -239,7 +240,7 @@ async function ingestFanzaWorks(options: FanzaIngestOptions = {}) {
     return parsed;
   };
 
-  let upserted = 0;
+  let inserted = 0;
   let skipped = 0;
   for (let index = 0; index < raws.length; index += 1) {
     const raw = raws[index];
@@ -278,12 +279,16 @@ async function ingestFanzaWorks(options: FanzaIngestOptions = {}) {
       article.related_works = Array.from(new Set([...article.related_works, ...sameMeta]));
     }
 
-    const result = await upsertArticle(article);
+    const result = await insertArticleIfNew(article);
     logLine(`FANZA work ${article.slug}: ${result.status}`);
-    upserted += 1;
+    if (result.status === "inserted") {
+      inserted += 1;
+    } else {
+      skipped += 1;
+    }
   }
 
-  return { upserted, skipped, fetched: total };
+  return { inserted, skipped, fetched: total };
 }
 
 // Topics ingest disabled by request.
