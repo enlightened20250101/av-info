@@ -219,7 +219,8 @@ type FanzaIngestOptions = {
 
 async function ingestFanzaWorks(options: FanzaIngestOptions = {}) {
   const targetNew = options.targetNew ?? Number(process.env.DMM_HITS_PER_RUN ?? "3");
-  const skipSlugs = await getWorkSlugs(5000);
+  const skipLimit = Number(process.env.DMM_EXISTING_SLUG_LIMIT ?? "20000");
+  const skipSlugs = await getWorkSlugs(skipLimit);
   const raws = await fetchFanzaWorks({
     skipSlugs,
     targetNew,
