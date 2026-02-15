@@ -47,6 +47,12 @@ export function extractTags(text: string) {
 export function extractMetaTagsFromBody(body: string) {
   const tags: string[] = [];
   const lines = body.split("\n");
+  const expandGenre = (genre: string) => {
+    if (genre === "看護師・ナース") {
+      return ["看護師", "ナース"];
+    }
+    return [genre];
+  };
   lines.forEach((line) => {
     if (line.startsWith("メーカー:")) {
       const maker = line.replace("メーカー:", "").trim();
@@ -54,7 +60,10 @@ export function extractMetaTagsFromBody(body: string) {
     }
     if (line.startsWith("ジャンル:")) {
       const genres = line.replace("ジャンル:", "").split("/").map((g) => g.trim());
-      genres.filter(Boolean).forEach((genre) => tags.push(`genre:${genre}`));
+      genres
+        .filter(Boolean)
+        .flatMap(expandGenre)
+        .forEach((genre) => tags.push(`genre:${genre}`));
     }
   });
   return tags;
