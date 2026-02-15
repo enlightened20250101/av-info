@@ -249,7 +249,6 @@ async function ingestFanzaWorks(options: FanzaIngestOptions = {}) {
     const publishedAt = parseReleaseDate(raw.release_date) ?? schedulePublishedAt(index, total);
     const article = normalizeFanzaWork(raw, publishedAt);
     if (!article) {
-      skipped += 1;
       continue;
     }
 
