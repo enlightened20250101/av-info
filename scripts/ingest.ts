@@ -242,7 +242,6 @@ async function ingestFanzaWorks(options: FanzaIngestOptions = {}) {
   };
 
   let inserted = 0;
-  let skipped = 0;
   for (let index = 0; index < raws.length; index += 1) {
     const raw = raws[index];
     const publishedAt = parseReleaseDate(raw.release_date) ?? schedulePublishedAt(index, total);
@@ -284,12 +283,10 @@ async function ingestFanzaWorks(options: FanzaIngestOptions = {}) {
     logLine(`FANZA work ${article.slug}: ${result.status}`);
     if (result.status === "inserted") {
       inserted += 1;
-    } else {
-      skipped += 1;
     }
   }
 
-  return { inserted, skipped, fetched: total };
+  return { inserted, fetched: total };
 }
 
 // Topics ingest disabled by request.
